@@ -28,37 +28,79 @@
         </ul>
       </header>
       <section>
-        <h3>
-<a id="welcome-to-github-pages" class="anchor" href="#welcome-to-github-pages" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Welcome to GitHub Pages.</h3>
-
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here <a href="https://guides.github.com/features/mastering-markdown/">using GitHub Flavored Markdown</a>, select a template crafted by a designer, and publish. After your page is generated, you can check out the new <code>gh-pages</code> branch locally. If you’re using GitHub Desktop, simply sync your repository and you’ll see the new branch.</p>
 
 <h3>
-<a id="designer-templates" class="anchor" href="#designer-templates" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Designer Templates</h3>
+<a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h3>
 
-<p>We’ve crafted some handsome templates for you to use. Go ahead and click 'Continue to layouts' to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved.</p>
+<p>We are going to implement parallel suffix array construction on the latedays cluster. We plan on implementing both a multithreaded CPU algorithm and a CUDA GPU-based algorithm, and compare our performance to existing benchmarks.</p>
 
 <h3>
-<a id="creating-pages-manually" class="anchor" href="#creating-pages-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Creating pages manually</h3>
+<a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h3>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>A suffix array is a data structure that stores the suffixes of a word in sorted order. It stores an array which at entry i stores the starting index of the lexicographically ith smallest suffix. The suffix array is related to the suffix tree data structure, but uses a smaller memory footprint (5 times less) and has the benefit of cache locality.
+
+Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
+</p>
+
+<h3>
+<a id="resources" class="anchor" href="#resources" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Resources</h3>
+
+<p>
+Paper references:
+<br>
+GPU:
+<ul>
+<li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
+<li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
+<li> <a href="http://dl.acm.org/citation.cfm?id=2442536"> Parallel suffix array and least common prefix for the GPU </a> </li>
+<li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
+</ul>
+
+Parallel:
+<ul>
+<li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
+<li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
+</ul>
+Starter code, test inputs, baseline benchmarks:
+<a href="http://www.cs.cmu.edu/~pbbs/benchmarks.html"> Problem Based Benchmark Suite (PBBS) </a>
+<br>
+We will have to scan papers and examine source code to determine if there is a suitable benchmark for GPU-based algorithms.
+</p>
+
+
+<h3>
+<a id="platform" class="anchor" href="#platform" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Platform</h3>
+
+<p>The latedays cluster has multiple nodes and GPUs, so we can test both a parallel distributed version and a GPU version.</p>
+
+<h3>
+<a id="schedule" class="anchor" href="#schedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Schedule</h3>
+
+<p>
+<ul>
+  <li> [4/1 - 4/8:] Read relevant papers </li>
+    <li> [4/8 - 4/15:] Understand benchmark implementations. Start developing our own implementations </li>
+    <li> [4/15 - 4/22:] Write a parallel implementation for CPU, comparing with benchmark </li>
+    <li> [4/22 - 4/29:] Write a parallel implementation for GPU </li>
+    <li> [4/29 - 5/6:] Optimizations and runtime analysis </li>
+    <li> [5/6 - 5/9] Prepare for presentation </li>
+
+</ul>
+</p>
+
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
-<p>You can <a href="https://help.github.com/articles/basic-writing-and-formatting-syntax/#mentioning-users-and-teams" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p> Sunny Nahar (<a href="https://github.com/snnynhr" class="user-mention">@snnynhr</a>) and Tom Tseng (<a href="https://github.com/tomtseng" class="user-mention">@tomtseng</a>).</p>
 
-<h3>
-<a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact</h3>
-
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
       </section>
       <footer>
-        <p>This project is maintained by <a href="https://github.com/snnynhr">snnynhr</a></p>
+        <p>This project is maintained by <a href="https://github.com/snnynhr">snnynhr</a> and <a href="https://github.com/tomtseng">tomtseng</a></p>
         <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
-    
+
   </body>
 </html>
