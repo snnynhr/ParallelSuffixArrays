@@ -44,11 +44,24 @@ Project Proposal
 <br><br>
 Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
 <br><br>
-There are two common algorithms for suffix array construction. The DC3 algorithm solves of subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
+There are two common algorithms for suffix array construction. The DC3 algorithm solves a subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
 <br><br>
 The Prefix doubling algorithm works by sorting suffixes by first 1 character, then by first 2 characters, then by first 4 characters, then by first 8 characters, and so on. It often uses radix sorting.
 <br><br>
 The papers listed below in Resources describe variants and improvements to the above algorithms.
+</p>
+
+<h3>
+<a id="challenges" class="anchor" href="#challenges" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Challenges</h3>
+
+<p>
+For the prefix-doubling algorithm, each round of sorting depends on the previous round of sorting. Sorting doesn't have a great amount of locality and has considerable divergence. Also, prefixes are put in buckets as sorting occurs, but the distrbution of data within the buckets is data-dependent and will likely be non-uniform. This leads to load imbalance.
+<br><br>
+For the DC3 algorithm, the recursive structure creates many dependencies. In addition, it uses some comparison-based sorting and merging, which can be expensive for strings.
+<br><br>
+We must figure out which algorithm is fastest and find ways to mitigate its flaws.
+<br><br>
+Lastly, GPUs have limited memory, so when we divide up work, we must find a reasonable way to portion the large inputs into chunks such that we minimize communication requirements and maximize locality.
 </p>
 
 <h3>
@@ -57,7 +70,7 @@ The papers listed below in Resources describe variants and improvements to the a
 <p>
 Paper references:
 <br>
-GPU:
+GPU based construction:
 <ul>
 <li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
 <li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
@@ -65,15 +78,17 @@ GPU:
 <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
 </ul>
 
-Parallel:
+Parallel construction:
 <ul>
 <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
 <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
 </ul>
 Starter code, test inputs, baseline benchmarks:
 <a href="http://www.cs.cmu.edu/~pbbs/benchmarks.html"> Problem Based Benchmark Suite (PBBS) </a>
-<br>
+<br><br>
 We will have to scan papers and examine source code to determine if there is a suitable benchmark for GPU-based algorithms.
+<br><br>
+The benchmark parallel implementation is in Cilk. We plan on using this framework, and will investigate other possible parallel frameworks, like OpenMP or simply pthreads.
 </p>
 
 
@@ -89,11 +104,14 @@ Plan to achieve:
 
 Hope to achieve:
 <ul>
-<li> Write an implementation for the CPU that is significantly faster than the PBBS implementation</li>
+<li> Write an implementation for the CPU that is significantly faster than the PBBS implementation. </li>
+<li> Extend our implementation to a distributed multi-node efficient implementation which scales reasonably well. </li>
 </ul>
+
 Deliverables:
 <ul>
 <li> We will show speedup graphs at the parallelism competition. </li>
+<li> We will aim to have a real-time demo of our algorithm working and its performance improvements compared to the baseline. </li>
 </ul>
 </p>
 
