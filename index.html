@@ -29,6 +29,9 @@
       </header>
       <section>
 
+<h2>
+Project Proposal
+</h2>
 <h3>
 <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h3>
 
@@ -38,8 +41,14 @@
 <a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h3>
 
 <p>A suffix array is a data structure that stores the suffixes of a word in sorted order. It stores an array which at entry i stores the starting index of the lexicographically ith smallest suffix. The suffix array is related to the suffix tree data structure, but uses a smaller memory footprint (5 times less) and has the benefit of cache locality.
-
+<br><br>
 Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
+<br><br>
+There are two common algorithms for suffix array construction. The DC3 algorithm solves of subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
+<br><br>
+The Prefix doubling algorithm works by sorting suffixes by first 1 character, then by first 2 characters, then by first 4 characters, then by first 8 characters, and so on. It often uses radix sorting.
+<br><br>
+The papers listed below in Resources describe variants and improvements to the above algorithms.
 </p>
 
 <h3>
@@ -67,6 +76,26 @@ Starter code, test inputs, baseline benchmarks:
 We will have to scan papers and examine source code to determine if there is a suitable benchmark for GPU-based algorithms.
 </p>
 
+
+<h3>
+<a id="goals" class="anchor" href="#goals" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goals and Deliverables</h3>
+
+<p>
+Plan to achieve:
+<ul>
+<li> Write an implementation for the CPU that is about as fast as the PBBS implementation. This should be achievable if we can understand the algorithm in the PBBS implementation. It's not clear whether or not we can reasonably get significant speedup. </li>
+<li> Write an implementation for the GPU that is significantly faster than the PBBS implementation. Speedup is possible due to the theoretically high instruction throughput of GPUs compared to CPUs. </li>
+</ul>
+
+Hope to achieve:
+<ul>
+<li> Write an implementation for the CPU that is significantly faster than the PBBS implementation</li>
+</ul>
+Deliverables:
+<ul>
+<li> We will show speedup graphs at the parallelism competition. </li>
+</ul>
+</p>
 
 <h3>
 <a id="platform" class="anchor" href="#platform" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Platform</h3>
