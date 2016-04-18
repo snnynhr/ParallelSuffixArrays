@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Parallel Suffix Arrays by snnynhr</title>
+    <title>Distributed Suffix Array Construction by snnynhr</title>
 
     <link rel="stylesheet" href="stylesheets/styles.css">
     <link rel="stylesheet" href="stylesheets/github-light.css">
@@ -15,7 +15,7 @@
   <body>
     <div class="wrapper">
       <header>
-        <h1>Distributed Suffix Arrays on Heterogeneous Architectures</h1>
+        <h1>Distributed Suffix Array Construction on Heterogeneous Architectures</h1>
         <p></p>
 
         <p class="view"><a href="https://github.com/snnynhr/ParallelSuffixArrays">View the Project on GitHub <small>snnynhr/ParallelSuffixArrays</small></a></p>
@@ -37,13 +37,13 @@ Project Checkpoint
 <a id="dschedule" class="anchor" href="#dschedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Detailed Schedule</h3>
 <p>
 <ul>
-  <li> [4/18 - 4/21:] Read through Flick and Aluru paper on distributed suffix arrays. Design implementation for Latedays cluster. Research and learn about MPI. <br>
-  Sunny: Begin design and implementation of per node suffix array construction. Write high level code with a modular API which can easily be worked on in parallel. <br>
-  Tom: Get MPI working on latedays. Develop a test application splitting work across the lateday nodes and test multi-machine functionality. <br><br>
+  <li> <b> [4/18 - 4/21:] </b> Read through Flick and Aluru paper on distributed suffix arrays. Design implementation for Latedays cluster. Research and learn about MPI. <br>
+  <b> Sunny </b>: Begin design and implementation of per node suffix array construction. Write high level code with a modular API which can easily be worked on in parallel. <br>
+  <b> Tom </b>: Get MPI working on latedays. Develop a test application splitting work across the lateday nodes and test multi-machine functionality. <br><br>
   </li>
-    <li> [4/21 - 4/24:] Study HARD for EXAM 2. <br>
-    Tom: Research efficient distributed sorting algorithms. <br>
-    Sunny: Starting implementing modules. <br>
+    <li> <b> [4/21 - 4/24:] </b> Study HARD for EXAM 2. <br>
+    <b> Tom </b>: Research efficient distributed sorting algorithms. <br>
+    <b> Sunny </b>: Starting implementing modules. <br>
     <ul>
     <li> K-mer sorting. </li>
     <li> Re-bucketing. </li>
@@ -56,22 +56,22 @@ Project Checkpoint
     <li> Prefix Doubling. </li>
     </ul>
     </li>
-    <li> [4/25 - 4/28:] Continuing implementation. <br>
-    Sunny: Implementation of modules. <br>
-    Tom: Implementation of sorting module + others. <br><br>
+    <li> <b> [4/25 - 4/28:] </b> Continuing implementation. <br>
+    <b> Sunny </b>: Implementation of modules. <br>
+    <b> Tom </b>: Implementation of sorting module + others. <br><br>
     </li>
-    <li> [4/29 - 5/2:] Finishing and testing implementation. <br>
-    Sunny: Finish implementation. Start testing on basic data sets. <br>
-    Tom: Find large 10-30GB data sets. <br><br>
+    <li> <b> [4/29 - 5/2:] </b> Finishing and testing implementation. <br>
+    <b> Sunny </b>: Finish implementation. Start testing on basic data sets. <br>
+    <b> Tom </b>: Find large 10-30GB data sets. <br><br>
     </li>
-    <li> [5/3 - 5/5:] Debugging and optimization. <br>
-    Sunny: Optimize per machine performance. Try offloading onto Xeon Phi. <br>
-    Tom: Optimize communication and data distribution. <br><br>
+    <li> <b> [5/3 - 5/5:] </b> Debugging and optimization. <br>
+    <b> Sunny </b>: Optimize per machine performance. Try offloading onto Xeon Phi. <br>
+    <b> Tom </b>: Optimize communication and data distribution. <br><br>
     </li>
-    <li> [5/6 - 5/9:] Prepare for presentation. Develop the demo. <br>
-    Sunny: Prepare slides and graphs and tables. <br>
-    Tom: Create a demo showing the construction on Latedays. <br>
-    Strech goal: Demo of sample string search or match queries. <br>
+    <li> <b> [5/6 - 5/9:] </b> Prepare for presentation. Develop the demo. <br>
+    <b> Sunny </b>: Prepare slides and graphs and tables. <br>
+    <b> Tom </b>: Create a demo showing the construction on Latedays. <br>
+    Stretch goal: Demo of sample string search or match queries. <br>
     </li>
 </ul>
 </p>
@@ -83,13 +83,28 @@ We researched numerous parallel approaches to suffix array constructions, both o
 </p>
 <p>
 We read the following papers describing suffix array construction on the CPU:
-<ul>
 
+
+<ul>
+<li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
+<li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
+<li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
+<li> <a href="https://pdfs.semanticscholar.org/6eeb/4c131cb4039821208e7cb756395810aa9a0a.pdf"> Parallel Lightweight Wavelet Tree, Suffix Array and FM-Index Construction </a></li>
+<li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction. </a> </li>
+
+<li> <a href="http://delivery.acm.org/10.1145/2810000/2807609/a16-flick.pdf?ip=128.237.73.121&id=2807609&acc=ACTIVE%20SERVICE&key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&CFID=747335659&CFTOKEN=47718763&__acm__=1460868043_d6df6e9218c458c4b26bbf6fd43656f0"> Parallel Distributed Memory Construction of Suffix and Longest Common Prefix Arrays </a></li>
 </ul>
+
+
 In addition, the following papers were for construction on the GPU:
 <ul>
+<li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
+<li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
+<li> <a href="http://download.springer.com/static/pdf/62/chp%253A10.1007%252F978-3-642-34109-0_40.pdf?originUrl=http%3A%2F%2Flink.springer.com%2Fchapter%2F10.1007%2F978-3-642-34109-0_40&token2=exp=1460874530~acl=%2Fstatic%2Fpdf%2F62%2Fchp%25253A10.1007%25252F978-3-642-34109-0_40.pdf%3ForiginUrl%3Dhttp%253A%252F%252Flink.springer.com%252Fchapter%252F10.1007%252F978-3-642-34109-0_40*~hmac=bd75e4bf5dde89b600c11b5dadb0c223dbced01ab18013c5cceaf51e46210c06">Parallel Suffix Array Construction for Shared Memory Architectures </a> </li>
 </ul>
 </p>
+
+
 <p>
 We also downloaded and tried to run Guy Blelloch's <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html"> PBBS (Problem Based Benchmark Suite) for suffix arrays </a>, in which there is an implementation of the parallel DC3 and Prefix doubling algorithms. The benchmark code segfaulted when run in parallel on almost all of the datasets. We were not able to find the error and fix the benchmark.
 </p>
@@ -110,6 +125,7 @@ Stretch goals:
 <li> Implement LCP array along with suffix array. </li>
 </ul>
 </p>
+<br><br><br>
 
 <a id="concerns" class="anchor" href="#concerns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Concerns</h3>
 We will want to test our implementation on datasets that are several gigabytes in size. We don't have enough AFS space to hold these datasets, though. 
