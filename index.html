@@ -79,7 +79,7 @@ Project Checkpoint
 <h3>
 <a id="workcompleted" class="anchor" href="#workcompleted" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Work Completed</h3>
 <p>
-We researched numerous parallel approaches to suffix array constructions, both on the CPU, and GPU. We found and excellent source which provides background and a complete taxonomy of the types of suffix array construction algorithms (SACAs) and the varying implementations over the past 30 years. This paper is Puglisi et. al's <a href="http://www.cas.mcmaster.ca/~bill/best/algorithms/07Taxonomy.pdf"> Taxonomy of Suffix Array Construction</a>.
+We researched numerous parallel approaches to suffix array constructions, both on the CPU, and GPU. We found an excellent source which provides background and a complete taxonomy of the types of suffix array construction algorithms (SACAs) and the varying implementations over the past 30 years. This paper is Puglisi et. al's <a href="http://www.cas.mcmaster.ca/~bill/best/algorithms/07Taxonomy.pdf"> Taxonomy of Suffix Array Construction</a>.
 </p>
 <p>
 We read the following papers describing suffix array construction on the CPU:
@@ -109,7 +109,7 @@ In addition, the following papers were for construction on the GPU:
 We also downloaded and tried to run Guy Blelloch's <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html"> PBBS (Problem Based Benchmark Suite) for suffix arrays </a>, in which there is an implementation of the parallel DC3 and Prefix doubling algorithms. The benchmark code segfaulted when run in parallel on almost all of the datasets. We were not able to find/fix benchmark.
 </p>
 <p>
-Due to the numerous available and likely high optimized implementations of parallel suffix array construction on the CPU, and recent literature on GPU based construction, and the complications in running Guy's benchmark suite, we decided that simply doing CPU and GPU based suffix array construction would not benefit our learning the most. We instead switched our focus to distributed suffix array construction algorithms. Most of the papers we read were only able to run on data sets of at most 2GB. We want to build a distributed version which can handle datasets of 10-30GB while achieving high parallelism. We plan to utilize Latedays to test our algorithm.
+Due to the numerous available and likely highly-optimized implementations of parallel suffix array construction on the CPU, and recent literature on GPU based construction, and the complications in running Guy's benchmark suite, we decided that simply doing CPU and GPU based suffix array construction would not benefit our learning the most. We instead switched our focus to distributed suffix array construction algorithms. Most of the papers we read were only able to run on data sets of at most 2GB. We want to build a distributed version which can handle datasets of 10-30GB while achieving high parallelism. We plan to utilize Latedays to test our algorithm.
 </p>
 
 <h3>
