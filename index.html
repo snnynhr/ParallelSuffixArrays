@@ -114,7 +114,7 @@ In addition, the following papers were for construction on the GPU:
 
 
 <p>
-We also downloaded and tried to run Guy Blelloch's <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html"> PBBS (Problem Based Benchmark Suite) for suffix arrays </a>, in which there is an implementation of the parallel DC3 and Prefix doubling algorithms. The benchmark code segfaulted when run in parallel on almost all of the datasets. We were not able to find/fix benchmark.
+We also downloaded and tried to run Guy Blelloch's <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html"> PBBS (Problem Based Benchmark Suite) for suffix arrays </a>, in which there is an implementation of the parallel DC3 and Prefix doubling algorithms. The benchmark code segfaulted when run in parallel on almost all of the datasets. We were not able to find the error and fix the benchmark.
 </p>
 <p>
 Due to the numerous available and likely highly-optimized implementations of parallel suffix array construction on the CPU, and recent literature on GPU based construction, and the complications in running Guy's benchmark suite, we decided that simply doing CPU and GPU based suffix array construction would not benefit our learning the most. We instead switched our focus to distributed suffix array construction algorithms. Most of the papers we read were only able to run on data sets of at most 2GB. We want to build a distributed version which can handle datasets of 10-30GB while achieving high parallelism. We plan to utilize Latedays to test our algorithm.
@@ -135,6 +135,8 @@ Stretch goals:
 </p>
 <br><br><br>
 
+<a id="concerns" class="anchor" href="#concerns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Concerns</h3>
+We will want to test our implementation on datasets that are several gigabytes in size. We don't have enough AFS space to hold these datasets, though. 
 
 
 <h2>
