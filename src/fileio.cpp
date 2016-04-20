@@ -6,7 +6,7 @@ size_t get_filesize(const char* filename)
     return in.tellg();
 }
 
-const char * file_block_decompose(const char* filename, MPI_Comm comm, uint32_t alignment)
+char * file_block_decompose(const char* filename, uint32_t* size, MPI_Comm comm, uint32_t alignment)
 {
     // get size of input file
     const std::size_t file_size = get_filesize(filename);
@@ -16,32 +16,34 @@ const char * file_block_decompose(const char* filename, MPI_Comm comm, uint32_t 
     MPI_Comm_size(comm, &p);
     MPI_Comm_rank(comm, &rank);
 
-
-    uint32_t size = 0;
     const uint32_t numblocks = (file_size + alignment - 1) / alignment;
 
-    const uint32_t blocks = numblocks / p + (rank < numblocks % p);
+    const uint32_t blocks = numblocks / p + (rank < (numblocks % p));
 
     if(rank < p - 1) {
-        size = blocks * alignment;
+        *size = blocks * alignment;
     } else {
-        size = blocks * alignment - file_size % alignment;
+        *size = blocks * alignment - file_size % alignment;
     }
 
-    const uint32_t offset = p * blocks * alignment;
+    if(rank == 0) {
+        fprintf(stderr, "Filesize %u and block size %u\n", file_size, *size);
+    }
+
+    const uint32_t offset = rank * blocks * alignment;
 
     // open file
     std::ifstream t(filename);
 
     std::streambuf* sbuf= t.rdbuf();
     sbuf->pubseekpos(offset, std::ios_base::in);
-    char* data = static_cast<char*>(malloc(sizeof(size)));
+    char* data = static_cast<char*>(malloc(sizeof(*size)));
 
     if(data == NULL) {
         return NULL;
     }
 
-    sbuf->sgetn(data, size);
+    sbuf->sgetn(data, *size);
     return data;
 }
 
