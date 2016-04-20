@@ -11,4 +11,6 @@
 #include <stdlib.h>
 
 size_t get_filesize(const char* filename);
-char * file_block_decompose(const char* filename, uint32_t* size, MPI_Comm comm = MPI_COMM_WORLD, uint32_t alignment = 32);
+char* file_block_decompose(const char* filename, uint64_t& size,
+                           MPI_Comm comm = MPI_COMM_WORLD,
+                           uint64_t alignment = 32);
