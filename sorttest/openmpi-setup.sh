@@ -1,0 +1,4 @@
+export OMPI_MCA_plm_rsh_agent="pbsdshwrapper"
+export OMPI_MCA_plm_default_hostfile=$PBS_NODEFILE
+export OMPI_MCA_plm_leave_session_attached=1
+export OMPI_MCA_orte_base_help_aggregate=0
