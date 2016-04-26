@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <numeric>
+#include <queue>
+#include <vector>
 #include <mpi.h>
 
 #include "assert.h"
@@ -10,9 +12,6 @@
 //   need to change: local splitting
 //                   gathering the local splitters
 //                   iterating through sorted allsamples
-//
-// when sorting bucket_elems, it could be more efficient to do a p-way merge
-// instead of using std::sort
 //
 // remove asserts + assert.h
 
@@ -51,6 +50,53 @@ int interval_overlap(int l1, int r1, int l2, int r2) {
   else if (r1 >= r2) return r2 - l2;
   else return r1 - l2;
 }
+
+// Perform a multiway merge to sort bucket_elems, assuming that bucket_elems
+// consists of p sorted chunks located at bucket_displacements[i] with size
+// bucket_counts[i].
+// Modifies bucket_counts and bucket_displacements
+template <typename T, typename _Compare>
+T *merge(T *bucket_elems, int bucket_size, int *bucket_counts, 
+            int *bucket_displacements, _Compare comp, int numprocs) {
+  int sorted_idx = 0;
+  T *sorted_bucket = new T[bucket_size];
+
+  auto reverse_comp = 
+    [&](const std::pair<T, int> &a, const std::pair<T, int> &b) 
+       { return comp(b.first, a.first); };
+  std::priority_queue<std::pair<T, int>, std::vector<std::pair<T, int>>, 
+                      decltype(reverse_comp)> pq (reverse_comp);
+
+  for (int i = 0; i < numprocs; ++i) {
+    if (bucket_counts[i] > 0) {
+      pq.emplace(bucket_elems[bucket_displacements[i]], i);
+      --bucket_counts[i];
+      ++bucket_displacements[i];
+    }
+  }
+
+  while (!pq.empty()) {
+    T elem;
+    int bucket_idx;
+    std::tie(elem, bucket_idx) = pq.top();
+
+    sorted_bucket[sorted_idx++] = elem;
+
+    if (bucket_counts[bucket_idx] > 0) {
+      pq.emplace(bucket_elems[bucket_displacements[bucket_idx]], bucket_idx);
+      --bucket_counts[bucket_idx];
+      ++bucket_displacements[bucket_idx];
+    }
+
+    pq.pop();
+  }
+
+  assert(sorted_idx == bucket_size);
+
+  return sorted_bucket;
+}
+
+
 
 // Return array of p-1 splitter elements, where p is the number of processors.
 // 
@@ -170,13 +216,19 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp,
                 bucket_elems, recv_split_counts, recv_displacements, mpi_dtype,
                 MPI_COMM_WORLD);
 
+  // sort bucket elements
+  value_type *sorted_bucket = 
+    merge(bucket_elems, *bucket_size_ptr, recv_split_counts, recv_displacements,
+          comp, numprocs);
+
   delete[] splitters;
   delete[] send_split_counts;
   delete[] recv_split_counts;
   delete[] send_displacements;
   delete[] recv_displacements;
+  delete[] bucket_elems;
 
-  return (void *)bucket_elems;
+  return (void *)sorted_bucket;
 }
 
 // Redistribute bucket elements to original input array (begin to end)
@@ -251,23 +303,19 @@ void samplesort(_Iter begin, _Iter end, _Compare comp,
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
 
   int bucket_size;
-  value_type *bucket_elems =
+  value_type *sorted_bucket =
     (value_type *)get_buckets(begin, end, comp, &bucket_size, 
                               mpi_dtype, numprocs, myid);
 
   //printf("proc %d bucket_size %d\n", myid, bucket_size);
-
-  // sort bucket elements
-  std::sort(bucket_elems, bucket_elems + bucket_size, comp);
-
   //printf("Proc %d: bucket holds %d to %d\n", myid, bucket_elems[0], bucket_elems[bucket_size-1]);
 
-  redistribute(begin, end, bucket_elems, bucket_size, 
+  redistribute(begin, end, sorted_bucket, bucket_size, 
                mpi_dtype, numprocs, myid);
 
   //printf("Proc %d: redistr holds %d to %d\n", myid, *begin, *(end-1));
 
-  delete[] bucket_elems;
+  delete[] sorted_bucket;
 }
 
 } // end namespace
