@@ -11,10 +11,6 @@
 //                   gathering the local splitters
 //                   iterating through sorted allsamples
 //
-// handle case where many of the global splitters are equal
-//   (the code should still work, but it definitely won't distribute the data
-//    evenly; some node will certainly not recieve any data)
-//
 // when sorting bucket_elems, it could be more efficient to do a p-way merge
 // instead of using std::sort
 //
@@ -45,8 +41,7 @@ int *exclusive_sum(int *arr, size_t n) {
 }
 
 // Return the length of the intersection of [l1, r1) and [l2, r2)
-unsigned interval_overlap(unsigned l1, unsigned r1,
-                          unsigned l2, unsigned r2) {
+int interval_overlap(int l1, int r1, int l2, int r2) {
   if (l2 < l1) {
     std::swap(l1, l2);
     std::swap(r1, r2);
@@ -67,15 +62,15 @@ void *get_splitters(_Iter begin, _Iter end,
                     int numprocs, int myid) {
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
 
-  const unsigned size = std::distance(begin, end);
-  const unsigned sample_size = numprocs - 1;
+  const int size = std::distance(begin, end);
+  const int sample_size = numprocs - 1;
 
   // get p-1 local splitters, where p is the number of processors
   value_type *sample = new value_type[sample_size];
   _Iter s_pos = begin;
-  const unsigned jump = size / (sample_size+1);
-  const unsigned leftover = size % (sample_size+1);
-  for (unsigned i = 0; i < sample_size; ++i) {
+  const int jump = size / (sample_size+1);
+  const int leftover = size % (sample_size+1);
+  for (int i = 0; i < sample_size; ++i) {
     s_pos += jump + (i < leftover);
     assert(begin <= s_pos-1 && s_pos-1 < end);
     sample[i] = *(s_pos-1);
@@ -92,8 +87,8 @@ void *get_splitters(_Iter begin, _Iter end,
   if (myid == 0) {
     std::sort(all_samples, all_samples + numprocs*sample_size, comp);
 
-    unsigned as_pos = 0;
-    for (unsigned i = 0; i < sample_size; ++i) {
+    int as_pos = 0;
+    for (int i = 0; i < sample_size; ++i) {
       as_pos += sample_size;
       assert(0 <= as_pos-1 && as_pos-1 < numprocs*sample_size);
       sample[i] = all_samples[as_pos-1];
@@ -101,7 +96,7 @@ void *get_splitters(_Iter begin, _Iter end,
 
     /*
     printf("Splitters:");
-    for (unsigned i = 0; i < sample_size; ++i)
+    for (int i = 0; i < sample_size; ++i)
       printf(" %d: %d,", i, sample[i]);
     printf("\n");
     */
@@ -131,10 +126,29 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp,
   _Iter s_pos = begin;
   int i = 0;
   while (i < num_splitters) {
-    _Iter s_pos_next = std::lower_bound(s_pos, end, splitters[i], comp);
-    send_split_counts[i] = std::distance(s_pos, s_pos_next);
-    s_pos = s_pos_next;
-    ++i;
+    int same_idx = i;
+    while (0 < same_idx && same_idx < num_splitters 
+        && splitters[same_idx-1] == splitters[same_idx])
+      ++same_idx;
+
+    const int num_same = same_idx - i + 1;
+
+    if (num_same == 1) { // splitters[i] isn't repeated
+      _Iter s_pos_next = std::lower_bound(s_pos, end, splitters[i], comp);
+      send_split_counts[i] = std::distance(s_pos, s_pos_next);
+      s_pos = s_pos_next;
+      ++i;
+    } else { 
+      // splitters[i] is repeated. Try to distribute elements evenly
+      _Iter s_pos_next = std::upper_bound(s_pos, end, splitters[i], comp);
+      const int dist = std::distance(s_pos, s_pos_next);
+      const int jump = dist / (num_same-1);
+      const int leftover = dist % (num_same-1);
+      for (int j = 0; j < num_same; ++j)
+        send_split_counts[i+j] = jump + (j < leftover);
+      s_pos = s_pos_next;
+      i = same_idx;
+    }
   }
   send_split_counts[num_splitters] = std::distance(s_pos, end);
 
@@ -168,7 +182,7 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp,
 // Redistribute bucket elements to original input array (begin to end)
 template <typename _Iter>
 void redistribute(_Iter begin, _Iter end,
-                  void *bucket, unsigned bucket_size,
+                  void *bucket, int bucket_size,
                   MPI_Datatype mpi_dtype, int numprocs, int myid) {
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
   value_type *bucket_elems = (value_type *)bucket;
@@ -240,6 +254,8 @@ void samplesort(_Iter begin, _Iter end, _Compare comp,
   value_type *bucket_elems =
     (value_type *)get_buckets(begin, end, comp, &bucket_size, 
                               mpi_dtype, numprocs, myid);
+
+  //printf("proc %d bucket_size %d\n", myid, bucket_size);
 
   // sort bucket elements
   std::sort(bucket_elems, bucket_elems + bucket_size, comp);

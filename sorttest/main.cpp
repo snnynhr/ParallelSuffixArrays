@@ -1,6 +1,5 @@
 #include <algorithm>
-#include <assert.h>
-#include <stdio.h>
+#include <iostream>
 #include <mpi.h>
 
 #include "ssort.h"
@@ -17,12 +16,14 @@ static int *exclusive_sum(int *arr, size_t n) {
   return sums;
 }
 
-void sorttest(int *arr, int n, int numprocs, int myid) {
+void sorttest(int *arr, int n, int numprocs, int myid, std::string test_name) {
   int *all_sizes = NULL;
   int *correct_result = NULL;
   int *displacements = NULL;
   int *ssort_result = NULL;
   int total_size;
+
+  /* get correct result */
 
   if (myid == 0)
     all_sizes = new int[numprocs];
@@ -39,6 +40,11 @@ void sorttest(int *arr, int n, int numprocs, int myid) {
   MPI_Gatherv(arr, n, MPI_INT, correct_result, all_sizes, displacements,
               MPI_INT, 0, MPI_COMM_WORLD);
 
+  if (myid == 0) 
+    std::sort(correct_result, correct_result+total_size);
+
+  /* get samplesort result */
+
   ssort::samplesort(arr, arr+n, std::less<int>(), MPI_INT, numprocs, myid);
 
   // samplesort should preserve sizes of original input arrays,
@@ -47,15 +53,23 @@ void sorttest(int *arr, int n, int numprocs, int myid) {
               MPI_INT, 0, MPI_COMM_WORLD);
 
   if (myid == 0) {
-    std::sort(correct_result, correct_result+total_size);
-
-    for (int i = 0; i < total_size; i++)
-      assert(correct_result[i] == ssort_result[i]);
+    for (int i = 0; i < total_size; i++) {
+      if (correct_result[i] != ssort_result[i]) {
+        std::cout << "WRONG RESULT: idx " << i << " expected "
+                  << correct_result[i] << ", got" << ssort_result[i]
+                  << std::endl;
+        break;
+      }
+    }
   }
 
   delete[] all_sizes;
   delete[] correct_result;
   delete[] displacements;
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (myid == 0)
+    std::cout << "Completed test \"" << test_name << '\"' <<  std::endl; 
 }
 
 int main() {
@@ -71,48 +85,32 @@ int main() {
   int *arr = new int[n];
   for (int i = 0; i < n; ++i)
     arr[i] = prng(myid*n+i);
-  sorttest(arr, n, numprocs, myid);
+  sorttest(arr, n, numprocs, myid, "uniform sizes");
   delete[] arr;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (myid == 0)
-    printf("Pass test 1\n");
 
 
   n = 1;
   arr = new int[n];
   for (int i = 0; i < n; ++i)
     arr[i] = prng(myid*n+i);
-  sorttest(arr, n, numprocs, myid);
+  sorttest(arr, n, numprocs, myid, "small arrays");
   delete[] arr;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (myid == 0)
-    printf("Pass test 2\n");
 
 
   n = 1000 + prng(myid);
   arr = new int[n];
   for (int i = 0; i < n; ++i)
     arr[i] = prng(myid*n+i);
-  sorttest(arr, n, numprocs, myid);
+  sorttest(arr, n, numprocs, myid, "variable sizes");
   delete[] arr;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (myid == 0)
-    printf("Pass test 3\n");
 
 
   n = 1000;
   arr = new int[n];
   for (int i = 0; i < n; ++i)
-    arr[i] = i % 2;
-  sorttest(arr, n, numprocs, myid);
+    arr[i] = (i % 2);
+  sorttest(arr, n, numprocs, myid, "lots of equal values");
   delete[] arr;
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (myid == 0)
-    printf("Pass test 4\n");
 
 
   MPI_Finalize();
