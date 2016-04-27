@@ -1,5 +1,5 @@
 #!/bin/sh
-#PBS -lwalltime=1:00
+#PBS -lwalltime=4:00
 #PBS -lnodes=3:ppn=6
 #PBS -N result
 

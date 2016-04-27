@@ -17,18 +17,12 @@
 // remove asserts + assert.h
 
 // NOTES:
-// Here I make the assumption that the sizes of the input arrays summed across
-// all processors can be held in an int.
-// The reason I do this is because MPI calls require counts and displacements
-// to be ints, e.g. see MPI_Alltoallv.
-// *** This is a big problem if we want to sort big arrays! ***
-// There are two possible fixes:
-//   (1) Send the arrays with a larger MPI_Datatype 
-//   (2) Send the arrays in chunks.
-// (See http://stackoverflow.com/questions/23201522/how-can-i-pass-long-and-or-unsigned-integers-to-mpi-arguments?rq=1 )
-// In either case, we'll probably want to write wrappers for the MPI functions
-// that can handle passing around large arrays. TODO
-
+// Here I make the assumption that the sizes of the input arrays and the bucket
+// arrays can be held in a signed int. The reason I do this is because MPI
+// calls require counts and displacements to be ints, e.g. see MPI_Alltoallv.
+// This unfortunately means that I make the assumption that we don't get some
+// bad-case input where the bucket sizes are skewed and some processor gets a
+// lot of data at once.
 
 namespace ssort {
 
@@ -41,7 +35,7 @@ int *exclusive_sum(int *arr, size_t n) {
 }
 
 // Return the length of the intersection of [l1, r1) and [l2, r2)
-int interval_overlap(int l1, int r1, int l2, int r2) {
+size_t interval_overlap(size_t l1, size_t r1, size_t l2, size_t r2) {
   if (l2 < l1) {
     std::swap(l1, l2);
     std::swap(r1, r2);
@@ -53,7 +47,7 @@ int interval_overlap(int l1, int r1, int l2, int r2) {
 }
 
 // Return array of p-1 splitter elements, where p is the number of processors.
-// 
+//
 // Assumes that p^2 is a reasonable number of elements to hold and sort on one
 // processor
 template <typename _Iter, typename _Compare>
@@ -83,7 +77,7 @@ void *get_splitters(_Iter begin, _Iter end,
   MPI_Gather(sample, sample_size, mpi_dtype,
              all_samples, sample_size, mpi_dtype, 0, MPI_COMM_WORLD);
 
-  // get and broadcast p-1 global splitters, placing them in sample array
+  // get and broadcast p-1 global splitters, placing them in sampling array
   if (myid == 0) {
     std::sort(all_samples, all_samples + numprocs*sample_size, comp);
 
@@ -110,7 +104,7 @@ void *get_splitters(_Iter begin, _Iter end,
 }
 
 // Place input data into p buckets and give bucket i to processor i.
-// Buckets are not guaranteed to be evenly sized. 
+// Buckets are not guaranteed to be evenly sized.
 template <typename _Iter, typename _Compare>
 void *get_buckets(_Iter begin, _Iter end, _Compare comp,
                   int *bucket_size_ptr,
@@ -127,7 +121,7 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp,
   int i = 0;
   while (i < num_splitters) {
     int same_idx = i;
-    while (0 < same_idx && same_idx < num_splitters 
+    while (0 < same_idx && same_idx < num_splitters
         && splitters[same_idx-1] == splitters[same_idx])
       ++same_idx;
 
@@ -138,7 +132,7 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp,
       send_split_counts[i] = std::distance(s_pos, s_pos_next);
       s_pos = s_pos_next;
       ++i;
-    } else { 
+    } else {
       // splitters[i] is repeated. Try to distribute elements evenly
       _Iter s_pos_next = std::upper_bound(s_pos, end, splitters[i], comp);
       const int dist = std::distance(s_pos, s_pos_next);
@@ -158,8 +152,8 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp,
   MPI_Alltoall(send_split_counts, 1, MPI_INT,
                recv_split_counts, 1, MPI_INT, MPI_COMM_WORLD);
 
-  int *send_displacements = exclusive_sum(send_split_counts, numprocs); 
-  int *recv_displacements = exclusive_sum(recv_split_counts, numprocs); 
+  int *send_displacements = exclusive_sum(send_split_counts, numprocs);
+  int *recv_displacements = exclusive_sum(recv_split_counts, numprocs);
 
   *bucket_size_ptr =
     recv_displacements[numprocs-1] + recv_split_counts[numprocs-1];
@@ -198,33 +192,34 @@ void redistribute(_Iter begin, _Iter end,
   int *send_counts = new int[numprocs];
   int *recv_counts = new int[numprocs];
 
-  int global_my_orig_begin = 0;
-  int global_my_bucket_begin = 0;
+  size_t global_my_orig_begin = 0;
+  size_t global_my_bucket_begin = 0;
   for (int i = 0; i < myid; ++i) {
-    global_my_orig_begin += all_sizes[2*i];
-    global_my_bucket_begin += all_sizes[2*i+1];
+    global_my_orig_begin += (size_t)all_sizes[2*i];
+    global_my_bucket_begin += (size_t)all_sizes[2*i+1];
   }
-  int global_my_orig_end = global_my_orig_begin + all_sizes[2*myid];
-  int global_my_bucket_end = global_my_bucket_begin + all_sizes[2*myid+1];
+  size_t global_my_orig_end = global_my_orig_begin + (size_t)all_sizes[2*myid];
+  size_t global_my_bucket_end =
+    global_my_bucket_begin + (size_t)all_sizes[2*myid+1];
 
-  int curr_orig_begin = 0;
-  int curr_bucket_begin = 0;
+  size_t curr_orig_begin = 0;
+  size_t curr_bucket_begin = 0;
   for (int i = 0; i < numprocs; ++i) {
-    int curr_orig_end = curr_orig_begin + all_sizes[2*i];
-    send_counts[i] = 
-      interval_overlap(curr_orig_begin, curr_orig_end, 
+    size_t curr_orig_end = curr_orig_begin + (size_t)all_sizes[2*i];
+    send_counts[i] =
+      interval_overlap(curr_orig_begin, curr_orig_end,
                        global_my_bucket_begin, global_my_bucket_end);
     curr_orig_begin = curr_orig_end;
 
-    int curr_bucket_end = curr_bucket_begin + all_sizes[2*i+1];
-    recv_counts[i] = 
-      interval_overlap(curr_bucket_begin, curr_bucket_end, 
+    size_t curr_bucket_end = curr_bucket_begin + (size_t)all_sizes[2*i+1];
+    recv_counts[i] =
+      interval_overlap(curr_bucket_begin, curr_bucket_end,
                        global_my_orig_begin, global_my_orig_end);
     curr_bucket_begin = curr_bucket_end;
   }
 
-  int *send_displacements = exclusive_sum(send_counts, numprocs); 
-  int *recv_displacements = exclusive_sum(recv_counts, numprocs); 
+  int *send_displacements = exclusive_sum(send_counts, numprocs);
+  int *recv_displacements = exclusive_sum(recv_counts, numprocs);
 
   MPI_Alltoallv(bucket_elems, send_counts, send_displacements, mpi_dtype,
                 begin, recv_counts, recv_displacements, mpi_dtype,
@@ -252,7 +247,7 @@ void samplesort(_Iter begin, _Iter end, _Compare comp,
 
   int bucket_size;
   value_type *bucket_elems =
-    (value_type *)get_buckets(begin, end, comp, &bucket_size, 
+    (value_type *)get_buckets(begin, end, comp, &bucket_size,
                               mpi_dtype, numprocs, myid);
 
   //printf("proc %d bucket_size %d\n", myid, bucket_size);
@@ -262,7 +257,7 @@ void samplesort(_Iter begin, _Iter end, _Compare comp,
 
   //printf("Proc %d: bucket holds %d to %d\n", myid, bucket_elems[0], bucket_elems[bucket_size-1]);
 
-  redistribute(begin, end, bucket_elems, bucket_size, 
+  redistribute(begin, end, bucket_elems, bucket_size,
                mpi_dtype, numprocs, myid);
 
   //printf("Proc %d: redistr holds %d to %d\n", myid, *begin, *(end-1));

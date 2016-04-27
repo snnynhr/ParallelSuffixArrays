@@ -40,7 +40,7 @@ void sorttest(int *arr, int n, int numprocs, int myid, std::string test_name) {
   MPI_Gatherv(arr, n, MPI_INT, correct_result, all_sizes, displacements,
               MPI_INT, 0, MPI_COMM_WORLD);
 
-  if (myid == 0) 
+  if (myid == 0)
     std::sort(correct_result, correct_result+total_size);
 
   /* get samplesort result */
@@ -56,7 +56,7 @@ void sorttest(int *arr, int n, int numprocs, int myid, std::string test_name) {
     for (int i = 0; i < total_size; i++) {
       if (correct_result[i] != ssort_result[i]) {
         std::cout << "WRONG RESULT: idx " << i << " expected "
-                  << correct_result[i] << ", got" << ssort_result[i]
+                  << correct_result[i] << ", got " << ssort_result[i]
                   << std::endl;
         break;
       }
@@ -69,7 +69,7 @@ void sorttest(int *arr, int n, int numprocs, int myid, std::string test_name) {
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (myid == 0)
-    std::cout << "Completed test \"" << test_name << '\"' <<  std::endl; 
+    std::cout << "Completed test \"" << test_name << '\"' <<  std::endl;
 }
 
 int main() {
