@@ -1,3 +1,6 @@
+#ifndef __SSORT__
+#define __SSORT__
+
 #include <algorithm>
 #include <numeric>
 #include <queue>
@@ -315,3 +318,5 @@ void samplesort(_Iter begin, _Iter end, _Compare comp, MPI_Datatype mpi_dtype,
 }
 
 }  // end namespace
+
+#endif

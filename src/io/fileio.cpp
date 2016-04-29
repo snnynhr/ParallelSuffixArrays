@@ -17,7 +17,8 @@ char* file_block_decompose(const char* filename, uint64_t& size, MPI_Comm comm,
 
   const uint64_t numblocks = (file_size + alignment - 1) / alignment;
 
-  const uint64_t blocks = numblocks / static_cast<uint64_t>(p) + (static_cast<uint64_t>(rank) < (numblocks % p));
+  const uint64_t blocks = numblocks / static_cast<uint64_t>(p) +
+                          (static_cast<uint64_t>(rank) < (numblocks % p));
 
   if (rank < p - 1) {
     size = blocks * alignment;
@@ -37,12 +38,18 @@ char* file_block_decompose(const char* filename, uint64_t& size, MPI_Comm comm,
   t.seekg(offset);
   char* data;
   try {
-    data = new char[size];
+    data = new char[size + 2];
   } catch (std::bad_alloc& ba) {
     return NULL;
   }
 
-  t.readsome(data, size);
+  if (rank < p - 1) {
+    t.readsome(data, size + 2);
+  } else {
+    t.readsome(data, size);
+    data[size + 1] = 0;
+    data[size + 2] = 0;
+  }
   return data;
 }
 
