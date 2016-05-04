@@ -38,6 +38,7 @@ int main(int argc, char* argv[]) {
 
   // Read chunk from file.
   // IMPORTANT: this reads size + 2 characters to remove communication.
+  // Hacky ... be careful with data
   char* data = file_block_decompose(argv[1], size, MPI_COMM_WORLD, 1);
   if (data == NULL) {
     fprintf(stderr, "File allocation on processor %d failed.\n", myid);
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]) {
   // MPI_Barrier(MPI_COMM_WORLD);
 
   // Done
-  free(data);
+  free(data - 1);
   MPI_Finalize();
   exit(0);
 }

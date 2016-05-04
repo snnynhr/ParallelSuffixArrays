@@ -20,17 +20,20 @@ char* file_block_decompose(const char* filename, uint64_t& size, MPI_Comm comm,
   const uint64_t blocks = numblocks / static_cast<uint64_t>(p) +
                           (static_cast<uint64_t>(rank) < (numblocks % p));
 
-  if (rank < p - 1) {
+  uint64_t offset = rank * blocks * alignment;
+  if (rank == 0) {
     size = blocks * alignment;
+  } else if (rank < p - 1) {
+    size = blocks * alignment;
+    offset -= 1;
   } else {
     size = blocks * alignment - file_size % alignment;
+    offset -= 1;
   }
 
   if (rank == 0) {
     fprintf(stderr, "Filesize %zu and block size %zu\n", file_size, size);
   }
-
-  const uint64_t offset = rank * blocks * alignment;
 
   // open file
   std::ifstream t(filename);
@@ -38,19 +41,22 @@ char* file_block_decompose(const char* filename, uint64_t& size, MPI_Comm comm,
   t.seekg(offset);
   char* data;
   try {
-    data = new char[size + 2];
+    data = new char[size + 3];
   } catch (std::bad_alloc& ba) {
     return NULL;
   }
 
-  if (rank < p - 1) {
-    t.readsome(data, size + 2);
+  if (rank == 0) {
+    data[0] = 0;
+    t.readsome(data + 1, size + 2);
+  } else if (rank < p - 1) {
+    t.readsome(data, size + 3);
   } else {
-    t.readsome(data, size);
+    t.readsome(data, size + 1);
     data[size + 1] = 0;
     data[size + 2] = 0;
   }
-  return data;
+  return data + 1;
 }
 
 // void write_files(const std::string& filename, _Iterator begin, _Iterator end,
