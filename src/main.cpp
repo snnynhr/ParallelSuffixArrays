@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   printf("Result: %d: ", myid);
-  for(int i = 0; i < size; i++) {
+  for(uint64_t i = 0; i < size; i++) {
     printf("%lu ", suffixarray[i]);
   }
   printf("\n");
