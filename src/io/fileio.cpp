@@ -6,7 +6,7 @@ size_t get_filesize(const char* filename) {
 }
 
 char* file_block_decompose(const char* filename, uint64_t& size,
-                           uint64_t& file_size, MPI_Comm comm,
+                           uint64_t& file_size, uint64_t& offset, MPI_Comm comm,
                            uint64_t alignment) {
   // get size of input file
   file_size = get_filesize(filename);
@@ -25,7 +25,6 @@ char* file_block_decompose(const char* filename, uint64_t& size,
 
   const uint64_t proc_size = proc_num_aligned_blocks * alignment;
 
-  uint64_t offset = 0;
   if (static_cast<uint32_t>(rank) < mod) {
     offset = rank * proc_num_aligned_blocks * alignment;
   } else {
