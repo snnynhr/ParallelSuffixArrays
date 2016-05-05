@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
    */
   uint64_t* suffixarray = NULL;
   try {
-    suffixarray = new uint64_t[size];
+    suffixarray = new uint64_t[size]();
   } catch (std::bad_alloc& ba) {
     MPI_Finalize();
     exit(-1);
@@ -71,8 +71,14 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
-  fprintf(stdout, "Done building at rank %d\n", myid);
-  // MPI_Barrier(MPI_COMM_WORLD);
+  //fprintf(stdout, "Done building at rank %d\n", myid);
+  MPI_Barrier(MPI_COMM_WORLD);
+
+  printf("Result: %d: ", myid);
+  for(int i = 0; i < size; i++) {
+    printf("%lu ", suffixarray[i]);
+  }
+  printf("\n");
 
   // Done
   free(data);

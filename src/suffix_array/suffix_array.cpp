@@ -38,9 +38,15 @@ bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
   if (l_id != 0 && r_id != 0) {
     return (lhs.name1 < rhs.name1);
   } else if (l_id == 1 || r_id == 1) {
-    std::tuple<uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8), lhs.name1);
-    std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
-    return ll < rr;
+    if (l_id == 1) {
+      std::tuple<uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8), lhs.name2);
+      std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
+      return ll < rr;
+    } else {
+      std::tuple<uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8), lhs.name1);
+      std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name2);
+      return ll < rr;
+    }
   } else if (l_id == 2 || r_id == 2) {
     std::tuple<uint32_t, uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8),
                                                 0xFF & (lhs.word), lhs.name2);
@@ -166,7 +172,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
   // Update names with prefix sum
   uint64_t* names = is_diff_from_adj;
-  for (uint64_t i = 1; i < dc3_elem_array_size; i++) {
+  for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
     names[i] += prefix_sum;
   }
 
@@ -219,9 +225,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
                     mpi_dc3_elem, numprocs, myid);
 
-  MPI_Barrier(MPI_COMM_WORLD); // test only
-
-
   /*
    *  @TODO: Component 5:
    *  S_0 := <(T[i], T[i+1], c', c'', i) : i mod 3 = 0), (c',i+1), (c'', i+2)
@@ -231,66 +234,79 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    P>
    */
 
-  // if (myid != 0) {
-  //   MPI_Send(&P[0], 1, mpi_dc3_elem, myid - 1, 0, MPI_COMM_WORLD);
-  // }
+  MPI_Barrier(MPI_COMM_WORLD);  // test only
 
-  // dc3_elem next;
-  // if (myid != numprocs - 1) {
-  //   MPI_Recv(&next, 1, mpi_dc3_elem, myid + 1, 0, MPI_COMM_WORLD,
-  //            MPI_STATUS_IGNORE);
-  // }
 
-  // dc3_tuple_elem* SS = new dc3_tuple_elem[size];
-  // for (uint64_t i = 0; i < size; i++) {
-  //   uint64_t d = i % 3;
-  //   uint64_t word = d;
-  //   word <<= 10;
-  //   word = word + (static_cast<uint64_t>(data[i]) & 0xFF);
-  //   word <<= 8;
-  //   word = word + (static_cast<uint64_t>(data[i + 1]) & 0xFF);
-  //   SS[i].word = word;
-  //   SS[i].index = i;
-  // }
+  if (myid != 0) {
+    MPI_Send(&P[0], 2, mpi_dc3_elem, myid - 1, 0, MPI_COMM_WORLD);
+  }
 
-  // for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //   uint64_t curr = P[i].index;
-  //   if (curr % 3 == 1) {
-  //     SS[curr - 1].name1 = P[i].word;
-  //     SS[curr].name1 = P[i].word;
-  //     if (curr - 2 > 0) {
-  //       SS[curr - 2].name2 = P[i].word;
-  //     }
-  //   } else {
-  //     SS[curr - 2].name2 = P[i].word;
-  //     SS[curr - 1].name2 = P[i].word;
-  //     SS[curr].name1 = P[i].word;
-  //   }
-  // }
+  dc3_elem* next2 = new dc3_elem[2]();
+  if (myid != numprocs - 1) {
+    MPI_Recv(next2, 2, mpi_dc3_elem, myid + 1, 0, MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+  }
 
-  // uint64_t w = next.index;
-  // if (w % 3 == 1) {
-  //   SS[w - 1].name1 = next.word;
-  //   SS[w - 2].name2 = next.word;
-  // } else {
-  //   SS[w - 2].name2 = next.word;
-  //   SS[w - 1].name2 = next.word;
-  // }
+  dc3_tuple_elem* SS = new dc3_tuple_elem[size]();
+  for (uint64_t i = 0; i < size; i++) {
+    uint64_t d = (i + offset) % 3;
+    uint64_t word = d;
+    word <<= 8;
+    word = word + (static_cast<uint64_t>(data[i]) & 0xFF);
+    word <<= 8;
+    word = word + (static_cast<uint64_t>(data[i + 1]) & 0xFF);
+    SS[i].word = word;
+    SS[i].index = i + offset;
+  }
 
-  // /*
-  //  *  @TODO: Component 8:
-  //  *  Sort S_0 union S_1 union S_2 using compare operator in paper.
-  //  */
 
-  // ssort::samplesort(SS, SS + size, compare_tuple_elem, mpi_dc3_tuple_elem,
-  //                   numprocs, myid);
+  for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+    uint64_t curr = P[i].index;
+    uint64_t off = curr - offset;
+    if (curr % 3 == 1) {
+      if (off - 1 >= 0) {
+        SS[off - 1].name1 = P[i].word;
+      }
+      SS[off].name1 = P[i].word;
+      if (off - 2 >= 0) {
+        SS[off - 2].name2 = P[i].word;
+      }
+    } else {
+      SS[off - 2].name2 = P[i].word;
+      SS[off - 1].name2 = P[i].word;
+      SS[off].name1 = P[i].word;
+    }
+  }
 
-  // /*
-  //  *  @TODO: Component 9:
-  //  *  Return last component of (s : s in S).
-  //  */
-  // for (uint64_t i = 0; i < size; i++) {
-  //   suffix_array[i] = SS[i].index;
-  // }
+  if (myid != numprocs - 1) {
+    uint64_t w = next2[0].index;
+    uint64_t off_w = w - offset;
+    if (w % 3 == 1) {
+      if (off_w - 1 < size) {
+        SS[off_w - 1].name1 = next2[0].word;
+        SS[off_w - 1].name2 = next2[1].word;
+      }
+      SS[off_w - 2].name2 = next2[0].word;
+    } else {
+      SS[off_w - 2].name2 = next2[0].word;
+      SS[off_w - 1].name2 = next2[0].word;
+    }
+  }
+
+  /*
+   *  @TODO: Component 6:
+   *  Sort S_0 union S_1 union S_2 using compare operator in paper.
+   */
+
+  ssort::samplesort(SS, SS + size, compare_tuple_elem, mpi_dc3_tuple_elem,
+                    numprocs, myid);
+
+  /*
+   *  @TODO: Component 7:
+   *  Return last component of (s : s in S).
+   */
+  for (uint64_t i = 0; i < size; i++) {
+    suffix_array[i] = SS[i].index;
+  }
   return 0;
 }
