@@ -125,57 +125,50 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  @TODO: Component 3:
    *  P := name (S)
    */
-  // if (myid != numprocs - 1) {
-  //   MPI_Send(S + (dc3_elem_array_size - 1), 1, mpi_dc3_elem, myid + 1, 0,
-  //            MPI_COMM_WORLD);
-  // }
 
-  // dc3_elem start;
-  // if (myid != 0) {
-  //   MPI_Recv(&start, 1, mpi_dc3_elem, myid - 1, 0, MPI_COMM_WORLD,
-  //            MPI_STATUS_IGNORE);
-  // }
+  // To check if not equal to previous, first element needs last element of
+  // previous process.
+  if (myid != numprocs - 1) {
+    MPI_Send(S + (dc3_elem_array_size - 1), 1, mpi_dc3_elem, myid + 1, 0,
+             MPI_COMM_WORLD);
+  }
 
-  // uint64_t* is_diff_from_adj = new uint64_t[dc3_elem_array_size]();
-  // if (is_diff_from_adj == NULL) {
-  //   return -1;
-  // }
-  // // Check first element.
-  // if (myid == 0) {
-  //   // First thread, different by definition
-  //   is_diff_from_adj[0] = 1;
-  // } else {
-  //   // Check from thread myid - 1 (p2p comm)
-  //   is_diff_from_adj[0] = (S[0].word != start.word);
-  // }
+  dc3_elem start;
+  if (myid != 0) {
+    MPI_Recv(&start, 1, mpi_dc3_elem, myid - 1, 0, MPI_COMM_WORLD,
+             MPI_STATUS_IGNORE);
+  }
 
-  // // Local scanned is_diff
-  // for (uint64_t i = 1; i < dc3_elem_array_size; i++) {
-  //   is_diff_from_adj[i] = static_cast<uint64_t>((S[i].word != S[i - 1].word)) + is_diff_from_adj[i-1];
-  // }
+  uint64_t* is_diff_from_adj = new uint64_t[dc3_elem_array_size]();
+  if (is_diff_from_adj == NULL) {
+    return -1;
+  }
+  // Check first element.
+  if (myid == 0) {
+    // First thread, different by definition
+    is_diff_from_adj[0] = 1;
+  } else {
+    // Check from thread myid - 1 (p2p comm)
+    is_diff_from_adj[0] = (S[0].word != start.word);
+  }
 
-  // printf("%d: ", myid);
-  // for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //   printf("%lu ", is_diff_from_adj[i]);
-  // }
-  // printf("\n");
+  // Local scanned is_diff to calculates names.
+  for (uint64_t i = 1; i < dc3_elem_array_size; i++) {
+    is_diff_from_adj[i] = static_cast<uint64_t>((S[i].word != S[i - 1].word)) +
+                          is_diff_from_adj[i - 1];
+  }
 
-  // uint64_t* names = new uint64_t[dc3_elem_array_size]();
-  // if (names == NULL) {
-  //   return -1;
-  // }
-  // MPI_Barrier(MPI_COMM_WORLD);
-  // // Barrier?
-  // uint64_t prefix_sum = 0;
-  // MPI_Exscan(&is_diff_from_adj[dc3_elem_array_size-1], &prefix_sum, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM,
-  //          MPI_COMM_WORLD);
-  // Barrier?
+  MPI_Barrier(MPI_COMM_WORLD);  // test only
+
+  uint64_t prefix_sum = 0;
+  MPI_Exscan(&is_diff_from_adj[dc3_elem_array_size - 1], &prefix_sum, 1,
+             MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
 
   // Update names with prefix sum
-  // uint64_t* names = is_diff_from_adj;
-  // for (uint64_t i = 1; i < dc3_elem_array_size; i++) {
-  //   names[i] += prefix_sum;
-  // }
+  uint64_t* names = is_diff_from_adj;
+  for (uint64_t i = 1; i < dc3_elem_array_size; i++) {
+    names[i] += prefix_sum;
+  }
 
   /*
    *  @TODO: Component 4:
