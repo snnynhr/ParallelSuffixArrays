@@ -279,9 +279,9 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
     // Word stores [arraynum][char i][char i + 1]
     uint64_t word = array_num;
-    word <<= sizeof(char);
+    word <<= 8;
     word = word + static_cast<uint64_t>(data[i]);
-    word <<= sizeof(char);
+    word <<= 8;
     word = word + static_cast<uint64_t>(data[i + 1]);
     SS[i].word = word;
 
