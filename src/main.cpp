@@ -51,9 +51,10 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "%d: %.*s\n", myid, static_cast<uint32_t>(size), data);
 
   MPI_Barrier(MPI_COMM_WORLD);  // test only
-                                /*
-                                 *  Begin construction!
-                                 */
+
+  /*
+   *  Begin construction!
+   */
   uint64_t* suffixarray = NULL;
   try {
     suffixarray = new uint64_t[size];

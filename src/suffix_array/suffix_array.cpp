@@ -2,12 +2,12 @@
 #include "../sort/ssort.h"
 
 typedef struct dc3_elem {
-  uint32_t word;
+  uint64_t word;
   uint64_t index;
 } dc3_elem;
 
 typedef struct dc3_tuple_elem {
-  uint32_t word;
+  uint64_t word;
   uint64_t name1;
   uint64_t name2;
   uint64_t index;
@@ -60,7 +60,7 @@ SuffixArray::SuffixArray() {
   int lengths[2] = {1, 1};
   MPI_Aint offsets[2] = {offsetof(struct dc3_elem, word),
                          offsetof(struct dc3_elem, index)};
-  MPI_Datatype types[2] = {MPI_UNSIGNED, MPI_UNSIGNED_LONG_LONG};
+  MPI_Datatype types[2] = {MPI_UNSIGNED_LONG_LONG, MPI_UNSIGNED_LONG_LONG};
 
   MPI_Type_struct(c, lengths, offsets, types, &mpi_dc3_elem);
   MPI_Type_commit(&mpi_dc3_elem);
@@ -71,7 +71,7 @@ SuffixArray::SuffixArray() {
   MPI_Aint _offsets[4] = {
       offsetof(dc3_tuple_elem, word), offsetof(dc3_tuple_elem, name1),
       offsetof(dc3_tuple_elem, name2), offsetof(dc3_tuple_elem, index)};
-  MPI_Datatype _types[4] = {MPI_UNSIGNED, MPI_UNSIGNED_LONG_LONG,
+  MPI_Datatype _types[4] = {MPI_UNSIGNED_LONG_LONG, MPI_UNSIGNED_LONG_LONG,
                             MPI_UNSIGNED_LONG_LONG, MPI_UNSIGNED_LONG_LONG};
 
   MPI_Type_struct(_c, _lengths, _offsets, _types, &mpi_dc3_tuple_elem);
@@ -104,7 +104,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     if (pos % 3 != 0) {
       // Watch unsigned / signed
       // Read 3 chars
-      uint32_t word = data[pos - offset];
+      uint64_t word = data[pos - offset];
       word = (word << 8) + data[pos - offset + 1];
       word = (word << 8) + data[pos - offset + 2];
       S[count].word = word;
@@ -190,71 +190,65 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
                 MPI_COMM_WORLD);
     }
   } else {
-    MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
-    MPI_COMM_WORLD);
+    MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1, MPI_COMM_WORLD);
   }
 
-  // // @TODO: Fix since word can be 64 bit.
-  // // Generate P array.
-  // dc3_elem P[dc3_elem_array_size];
-  // for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //   P[i].word = names[i];
-  //   P[i].index = S[i].index;
-  // }
+  // @TODO: We can probably reuse S.
+  // Generate P array.
+  dc3_elem* P = new dc3_elem[dc3_elem_array_size];
+  for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+    P[i].word = names[i];
+    P[i].index = S[i].index;
+  }
 
-  // // Not unique
-  // if (total == 0) {
-  //   // Permute.
-  //   ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem,
-  //   mpi_dc3_elem,
-  //                     numprocs, myid);
-  //   for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //     // reuse stack memory;
-  //     names[i] = P[i].word;
-  //   }
+  // Not unique
+  if (total == 0) {
+    // Permute.
+    ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem, mpi_dc3_elem,
+                      numprocs, myid);
+    for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+      // reuse stack memory;
+      names[i] = P[i].word;
+    }
 
-  //   // @TODO: Local compute: need to expand to distributed
-  //   // sais_int()
-  // }
+    // @TODO: Local compute: need to expand to distributed
+    // sais_int()
+  }
 
-  // // Sort by second element.
-  // ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
-  //                   mpi_dc3_elem, numprocs, myid);
+  // Sort by second element.
+  ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
+                    mpi_dc3_elem, numprocs, myid);
+
+  MPI_Barrier(MPI_COMM_WORLD); // test only
+
+
+  /*
+   *  @TODO: Component 5:
+   *  S_0 := <(T[i], T[i+1], c', c'', i) : i mod 3 = 0), (c',i+1), (c'', i+2)
+   in P>
+   *  S_1 := <(c, T[i], c', i) : i mod 3 = 1), (c,i), (c', i+1) in P>
+   *  S_2 := <(c, T[i], T[i+1], c'', i) : i mod 3 = 2), (c,i), (c'', i+2) in
+   P>
+   */
 
   // if (myid != 0) {
-  //   MPI_Send(P, 1, mpi_dc3_elem, myid - 1, 1, MPI_COMM_WORLD);
+  //   MPI_Send(&P[0], 1, mpi_dc3_elem, myid - 1, 0, MPI_COMM_WORLD);
   // }
 
   // dc3_elem next;
   // if (myid != numprocs - 1) {
-  //   MPI_Recv(&next, 1, mpi_dc3_elem, myid - 1, 1, MPI_COMM_WORLD,
+  //   MPI_Recv(&next, 1, mpi_dc3_elem, myid + 1, 0, MPI_COMM_WORLD,
   //            MPI_STATUS_IGNORE);
   // }
 
-  // /*
-  //  *  @TODO: Component 5:
-  //  *  S_0 := <(T[i], T[i+1], c', c'', i) : i mod 3 = 0), (c',i+1), (c'', i+2)
-  //  in
-  //  * P>
-  //  */
-  // /*
-  //  *  @TODO: Component 6:
-  //  *  S_1 := <(c, T[i], c', i) : i mod 3 = 1), (c,i), (c', i+1) in P>
-  //  */
-  // /*
-  //  *  @TODO: Component 7:
-  //  *  S_2 := <(c, T[i], T[i+1], c'', i) : i mod 3 = 2), (c,i), (c'', i+2) in
-  //  P>
-  //  */
-
-  // dc3_tuple_elem SS[size];
+  // dc3_tuple_elem* SS = new dc3_tuple_elem[size];
   // for (uint64_t i = 0; i < size; i++) {
-  //   uint32_t d = i % 3;
-  //   uint32_t word = d;
+  //   uint64_t d = i % 3;
+  //   uint64_t word = d;
   //   word <<= 10;
-  //   word = word + (static_cast<uint32_t>(data[i]) & 0xFF);
+  //   word = word + (static_cast<uint64_t>(data[i]) & 0xFF);
   //   word <<= 8;
-  //   word = word + (static_cast<uint32_t>(data[i + 1]) & 0xFF);
+  //   word = word + (static_cast<uint64_t>(data[i + 1]) & 0xFF);
   //   SS[i].word = word;
   //   SS[i].index = i;
   // }
