@@ -177,24 +177,22 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  SA^{12} = pDC3(<c : (c,i) in P>)
    *  P := <(j+1, mapBack(SA^{12}[j], n/3)) : j < 2n/3>
    */
-  // uint64_t total = 0;
-  // if (myid == numprocs - 1) {
-  //   total = names[dc3_elem_array_size - 1];
-  //   if (total == file_size) {
-  //     total = 1;
-  //     MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
-  //               MPI_COMM_WORLD);
-  //   } else {
-  //     total = 0;
-  //     MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
-  //               MPI_COMM_WORLD);
-  //   }
-  // } else {
-  //   MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
-  //   MPI_COMM_WORLD);
-  // }
-
-  // printf("Total recieved is %lu at %d\n", total, myid);
+  uint64_t total = 0;
+  if (myid == numprocs - 1) {
+    total = names[dc3_elem_array_size - 1];
+    if (total == ((file_size - 1) / 3) * 2 + ((file_size - 1) % 3)) {
+      total = 1;
+      MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
+                MPI_COMM_WORLD);
+    } else {
+      total = 0;
+      MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
+                MPI_COMM_WORLD);
+    }
+  } else {
+    MPI_Bcast(&total, 1, MPI_UNSIGNED_LONG_LONG, numprocs - 1,
+    MPI_COMM_WORLD);
+  }
 
   // // @TODO: Fix since word can be 64 bit.
   // // Generate P array.
