@@ -113,24 +113,13 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     }
     pos++;
   }
-  // printf("%d: ", myid);
-  // for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //   printf("[%x, %lu] ", S[i].word, S[i].index);
-  // }
-  // printf("\n");
 
   /*
    *  @TODO: Component 2:
    *  sort S by first component
    */
-  // ssort::samplesort(S, S + dc3_elem_array_size, compare_dc3_elem, mpi_dc3_elem,
-  //                   numprocs, myid);
-  // printf("hi from %d\n", myid);
-  // printf("%d: ", myid);
-  // for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //   printf("[%x, %lu] ", S[i].word, S[i].index);
-  // }
-  // printf("\n");
+  ssort::samplesort(S, S + dc3_elem_array_size, compare_dc3_elem, mpi_dc3_elem,
+                    numprocs, myid);
 
   /*
    *  @TODO: Component 3:
