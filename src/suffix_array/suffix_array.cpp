@@ -68,7 +68,7 @@ bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
 }
 
 inline uint64_t map_back(uint64_t i, uint64_t s) {
-  return i <= s ? 3*i + 1 : 3*(i - s) + 2;
+  return i < s ? 3*i + 1 : 3*(i - s) + 2;
 }
 
 SuffixArray::SuffixArray() {
@@ -308,14 +308,18 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
     for (int i = 0; i < dc3_elem_array_size_int; i++) {
       P[i].word = i + 1;
-      P[i].index = map_back(local_SA[i], file_size/3);
+      P[i].index = map_back(local_SA[i], (file_size - 1) / 3);
+      fprintf(stderr, "(%lu, %lu) ", P[i].word, P[i].index);
     }
 
     delete[] sizes;
     delete[] displ;
     delete[] all_SA;
     delete[] local_SA;
+    fprintf(stderr, "%d done recurring\n", myid);
   }
+
+
 
   // Sort P by second element. This aids in next component's construction.
   ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
@@ -358,9 +362,9 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
     // Word stores [arraynum][char i][char i + 1]
     uint64_t word = array_num;
-    word <<= sizeof(char);
+    word <<= 8;
     word = word + static_cast<uint64_t>(data[i]);
-    word <<= sizeof(char);
+    word <<= 8;
     word = word + static_cast<uint64_t>(data[i + 1]);
     SS[i].word = word;
 
