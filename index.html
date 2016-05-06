@@ -1,236 +1,515 @@
-<!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Distributed Suffix Array Construction by snnynhr</title>
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/github-light.css">
-    <meta name="viewport" content="width=device-width">
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-  </head>
-  <body>
-    <div class="wrapper">
-      <header>
-        <h1>Distributed Suffix Array Construction on Heterogeneous Architectures</h1>
-        <p></p>
-        <p class="view"><a href="https://github.com/snnynhr/ParallelSuffixArrays">View the Project on GitHub <small>snnynhr/ParallelSuffixArrays</small></a></p>
-        <ul>
-          <li><a href="https://github.com/snnynhr/ParallelSuffixArrays/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/snnynhr/ParallelSuffixArrays/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/snnynhr/ParallelSuffixArrays">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h2>
-        Project Checkpoint
-        </h2>
-        <h3>
-        <a id="dschedule" class="anchor" href="#dschedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Detailed Schedule</h3>
-        <p>
-          <ul>
-            <li> <b> [4/18 - 4/21:] </b> Read through Flick and Aluru paper on distributed suffix arrays. Read Kulla and Sanders paper. Design implementation for Latedays cluster. Research and learn about MPI. <br>
-              <b> Sunny </b>: Begin design and implementation of per node suffix array construction. Write high level code with a modular API which can easily be worked on in parallel. <br>
-              <b> Tom </b>: Get MPI working on latedays. Develop a test application splitting work across the lateday nodes and test multi-machine functionality. <br><br>
-            </li>
-            <li> <b> [4/21 - 4/24:] </b> Study HARD for EXAM 2. <br>
-              <b> Tom </b>: Research efficient distributed sorting algorithms. <br>
-              <b> Sunny </b>: Starting implementing modules for pDC3. <br>
-              <ul>
-                <li> K-mer sorting. </li>
-                <li> Re-bucketing. </li>
-                <li> Reorder to string order. </li>
-                <li> Shifting. </li>
-                <li> Tuple sorting. </li>
-                <li> Data distribution. </li>
-                <li> Bucket sorting. </li>
-                <li> Update ISA. </li>
-              </ul>
-            </li>
-            <li> <b> [4/25 - 4/28:] </b> Continuing implementation. <br>
-              <b> Sunny </b>: Implementation of modules. <br>
-              <b> Tom </b>: Implementation of sorting module + others. <br><br>
-            </li>
-            <li> <b> [4/29 - 5/2:] </b> Finishing and testing implementation. <br>
-              <b> Sunny </b>: Finish implementation. Start testing on basic data sets. <br>
-              <b> Tom </b>: Find large 10-30GB data sets. <br><br>
-            </li>
-            <li> <b> [5/3 - 5/5:] </b> Debugging and optimization. <br>
-              <b> Sunny </b>: Optimize per machine performance. Try offloading onto Xeon Phi. <br>
-              <b> Tom </b>: Optimize communication and data distribution. <br><br>
-            </li>
-            <li> <b> [5/6 - 5/9:] </b> Prepare for presentation. Develop the demo. <br>
-              <b> Sunny </b>: Prepare slides and graphs and tables. <br>
-              <b> Tom </b>: Create a demo showing the construction on Latedays. <br>
-            </li>
-          </ul>
-        </p>
-        <h3>
-        <a id="workcompleted" class="anchor" href="#workcompleted" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Stretch goals</h3>
-        <p>
-          <ul>
-            <li> Demo of sample string search or match queries. </li>
-            <li> Implement Prefix Doubling (more complex algorithm). </li>
-          </ul>
-        </p>
-        <h3>
-        <a id="workcompleted" class="anchor" href="#workcompleted" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Work Completed</h3>
-        <p>
-          We researched numerous parallel approaches to suffix array constructions, both on the CPU, and GPU. We found an excellent source which provides background and a complete taxonomy of the types of suffix array construction algorithms (SACAs) and the varying implementations over the past 30 years. This paper is Puglisi et. al's <a href="http://www.cas.mcmaster.ca/~bill/best/algorithms/07Taxonomy.pdf"> Taxonomy of Suffix Array Construction</a>.
-        </p>
-        <p>
-          We read the following papers describing suffix array construction on the CPU:
-          <ul>
-            <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
-            <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
-            <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
-            <li> <a href="https://pdfs.semanticscholar.org/6eeb/4c131cb4039821208e7cb756395810aa9a0a.pdf"> Parallel Lightweight Wavelet Tree, Suffix Array and FM-Index Construction </a></li>
-          </ul>
-          In addition, the following papers were for construction on the GPU:
-          <ul>
-            <li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
-            <li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
-            <li> <a href="http://download.springer.com/static/pdf/62/chp%253A10.1007%252F978-3-642-34109-0_40.pdf?originUrl=http%3A%2F%2Flink.springer.com%2Fchapter%2F10.1007%2F978-3-642-34109-0_40&token2=exp=1460874530~acl=%2Fstatic%2Fpdf%2F62%2Fchp%25253A10.1007%25252F978-3-642-34109-0_40.pdf%3ForiginUrl%3Dhttp%253A%252F%252Flink.springer.com%252Fchapter%252F10.1007%252F978-3-642-34109-0_40*~hmac=bd75e4bf5dde89b600c11b5dadb0c223dbced01ab18013c5cceaf51e46210c06">Parallel Suffix Array Construction for Shared Memory Architectures </a> </li>
-          </ul>
-          And finally, these were the papers on distributed suffix array construction:
-          <ul>
-            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction. </a> </li>
-            <li> <a href="http://delivery.acm.org/10.1145/2810000/2807609/a16-flick.pdf?ip=128.237.73.121&id=2807609&acc=ACTIVE%20SERVICE&key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&CFID=747335659&CFTOKEN=47718763&__acm__=1460868043_d6df6e9218c458c4b26bbf6fd43656f0"> Parallel Distributed Memory Construction of Suffix and Longest Common Prefix Arrays </a></li>
-          </ul>
-        </p>
-        <p>
-          We also downloaded and tried to run Guy Blelloch's <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html"> PBBS (Problem Based Benchmark Suite) for suffix arrays </a>, in which there are implementations of the CPU based parallel DC3 and Prefix doubling algorithms. The benchmark code segfaulted when run in parallel on almost all of the larger (>10MB) datasets. We were not able to find the errors and fix the benchmark.
-        </p>
-        <p>
-          Due to the numerous available and likely highly-optimized implementations of parallel suffix array construction on the CPU, and recent literature on GPU based construction, and the complications in running Guy's benchmark suite, we decided that simply doing CPU and GPU based suffix array construction would not benefit our learning the most. It would also be difficult to implement faster versions using the same algorithm.
-        </p>
-        <p>
-          We instead switched our focus to distributed suffix array construction algorithms. Most of the papers we read were only able to run on data sets of at most 2GB, which can be small, if you are dealing with areas which generally used large datasets (genomics). We want to build a distributed suffix array construction which can handle datasets of 10-30GB while achieving high parallelism. We plan to utilize Latedays to test our algorithm.
-        </p>
-        <p>
-          The papers described in the distributed section show approaches to both parallel DC3 and parallel Prefix doubling. The algorithm for prefix doubling is fairly complex, and in the paper, the testbed was 1024-1600 cores. We believe that on a smaller system like Latedays, parallel DC3 will be the better option since it has less overhead. We plan on building our suffix array construction algorithm using ideas from the Kulla and Sanders paper. As a stretch goal, we will try to implement the other algorithm as well to provide a comparison.
-        </p>
-        <h3>
-        <a id="updateddeliverables" class="anchor" href="#updateddeliverables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Updated Deliverables</h3>
-        <p>
-          What we expect to have:
-          <ul>
-            <li> Working implementation which can handle large datasets and achieve comparable speedups. </li>
-            <li> Demo of algorithm on data set. </li>
-          </ul>
-        </p>
-        <p>
-          Stretch goals:
-          <ul>
-            <li> Implement LCP array along with suffix array. </li>
-            <li> Implement prefix doubling. </li>
-          </ul>
-        </p>
-        <h3>
-        <a id="concerns" class="anchor" href="#concerns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Concerns</h3>
-        <p>
-          We will want to test our implementation on datasets that are several gigabytes in size. We don't have enough AFS space to hold these datasets, though.
-        </p>
-      </section>
-      <section>
-        <h2>
-        Project Proposal
-        </h2>
-        <h3>
-        <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h3>
-        <p>We are going to implement parallel suffix array construction on the latedays cluster. We plan on implementing both a multithreaded CPU algorithm and a CUDA GPU-based algorithm, and compare our performance to existing benchmarks.</p>
-        <h3>
-        <a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h3>
-        <p>A suffix array is a data structure that stores the suffixes of a word in sorted order. It stores an array which at entry i stores the starting index of the lexicographically ith smallest suffix. The suffix array is related to the suffix tree data structure, but uses a smaller memory footprint (5 times less) and has the benefit of cache locality.
-          <br><br>
-          Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
-          <br><br>
-          There are two common algorithms for suffix array construction. The DC3 algorithm solves a subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
-          <br><br>
-          The Prefix doubling algorithm works by sorting suffixes by first 1 character, then by first 2 characters, then by first 4 characters, then by first 8 characters, and so on. It often uses radix sorting.
-          <br><br>
-          The papers listed below in Resources describe variants and improvements to the above algorithms.
-        </p>
-        <h3>
-        <a id="challenges" class="anchor" href="#challenges" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Challenges</h3>
-        <p>
-          For the prefix-doubling algorithm, each round of sorting depends on the previous round of sorting. Sorting doesn't have a great amount of locality and has considerable divergence. Also, prefixes are put in buckets as sorting occurs, but the distrbution of data within the buckets is data-dependent and will likely be non-uniform. This leads to load imbalance.
-          <br><br>
-          For the DC3 algorithm, the recursive structure creates many dependencies. In addition, it uses some comparison-based sorting and merging, which can be expensive for strings.
-          <br><br>
-          We must figure out which algorithm is fastest and find ways to mitigate its flaws.
-          <br><br>
-          Lastly, GPUs have limited memory, so when we divide up work, we must find a reasonable way to portion the large inputs into chunks such that we minimize communication requirements and maximize locality.
-        </p>
-        <h3>
-        <a id="resources" class="anchor" href="#resources" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Resources</h3>
-        <p>
-          Paper references:
-          <br>
-          GPU based construction:
-          <ul>
-            <li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
-            <li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
-            <li> <a href="http://dl.acm.org/citation.cfm?id=2442536"> Parallel suffix array and least common prefix for the GPU </a> </li>
-            <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
-          </ul>
-          Parallel construction:
-          <ul>
-            <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
-            <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
-          </ul>
-          Starter code, test inputs, baseline benchmarks:
-          <a href="http://www.cs.cmu.edu/~pbbs/benchmarks.html"> Problem Based Benchmark Suite (PBBS) </a>
-          <br><br>
-          We will have to scan papers and examine source code to determine if there is a suitable benchmark for GPU-based algorithms.
-          <br><br>
-          The benchmark parallel implementation is in Cilk. We plan on using this framework, and will investigate other possible parallel frameworks, like OpenMP or simply pthreads.
-        </p>
-        <h3>
-        <a id="goals" class="anchor" href="#goals" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goals and Deliverables</h3>
-        <p>
-          Plan to achieve:
-          <ul>
-            <li> Write an implementation for the CPU that is about as fast as the PBBS implementation. This should be achievable if we can understand the algorithm in the PBBS implementation. It's not clear whether or not we can reasonably get significant speedup. </li>
-            <li> Write an implementation for the GPU that is significantly faster than the PBBS implementation. Speedup is possible due to the theoretically high instruction throughput of GPUs compared to CPUs. </li>
-          </ul>
-          Hope to achieve:
-          <ul>
-            <li> Write an implementation for the CPU that is significantly faster than the PBBS implementation. </li>
-            <li> Extend our implementation to a distributed multi-node efficient implementation which scales reasonably well. </li>
-          </ul>
-          Deliverables:
-          <ul>
-            <li> We will show speedup graphs at the parallelism competition. </li>
-            <li> We will aim to have a real-time demo of our algorithm working and its performance improvements compared to the baseline. </li>
-          </ul>
-        </p>
-        <h3>
-        <a id="platform" class="anchor" href="#platform" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Platform</h3>
-        <p>The latedays cluster has multiple nodes and GPUs, so we can test both a parallel distributed version and a GPU version.</p>
-        <h3>
-        <a id="schedule" class="anchor" href="#schedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Schedule</h3>
-        <p>
-          <ul>
-            <li> [4/1 - 4/8:] Read papers which describe parallel suffix array algorithms. Understand different algorithms and their behaviors, runtimes, etc. Determine if there is source code for their implementations. Test possible implementations on benchmark data. Understand benchmark implementations. Start developing our own implementations </li>
-            <li> [4/8 - 4/15:] Write a parallel implementation for CPU, comparing with benchmark.</li>
-            <li> [4/15 - 4/22:] Continue writing CPU implementation. Write parallel implementation for GPU. </li>
-            <li> [4/22 - 4/29:] Continue writing the suffix array implementation for GPU. </li>
-            <li> [4/29 - 5/6:] Crunch through the code and continue to optimize and test our implementations, using our 418 skills. Compile detailed runtime analysis over benchmark data sets. Profile implementations to squeeze out performance. </li>
-            <li> [5/6 - 5/9] Prepare for presentation. Develop the demo. </li>
-          </ul>
-        </p>
-        <h3>
-        <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h3>
-        <p> Sunny Nahar (<a href="https://github.com/snnynhr" class="user-mention">@snnynhr</a>) and Tom Tseng (<a href="https://github.com/tomtseng" class="user-mention">@tomtseng</a>).</p>
-      </section>
-      <footer>
-        <p>This project is maintained by <a href="https://github.com/snnynhr">snnynhr</a> and <a href="https://github.com/tomtseng">tomtseng</a></p>
-        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
-      </footer>
-    </div>
-    <script src="javascripts/scale.fix.js"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="description" content="">
+        <meta name="author" content="">
+        <title>Parallel Suffix Arrays</title>
+        <!-- Bootstrap Core CSS -->
+        <link rel="stylesheet" href="css/bootstrap.min.css" type="text/css">
+        <!-- Custom Fonts -->
+        <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+        <link href='http://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic,900,900italic' rel='stylesheet' type='text/css'>
+        <link rel="stylesheet" href="font-awesome/css/font-awesome.min.css" type="text/css">
+        <!-- Plugin CSS -->
+        <link rel="stylesheet" href="css/animate.min.css" type="text/css">
+        <!-- Custom CSS -->
+        <link rel="stylesheet" href="css/creative.css" type="text/css">
+        <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+        <!--[if lt IE 9]>
+        <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+        <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+    </head>
+    <body id="page-top">
+        <nav id="mainNav" class="navbar navbar-default navbar-fixed-top">
+            <div class="container-fluid">
+                <!-- Brand and toggle get grouped for better mobile display -->
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                    <span class="sr-only">Toggle navigation</span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand page-scroll" href="#page-top">pSFFX</a>
+                </div>
+                <!-- Collect the nav links, forms, and other content for toggling -->
+                <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                    <ul class="nav navbar-nav navbar-right">
+                        <li>
+                            <a class="page-scroll" href="#about">About</a>
+                        </li>
+                        <li>
+                            <a class="page-scroll" href="#applications">Applications</a>
+                        </li>
+                        <li>
+                            <a class="page-scroll" href="#links">Links</a>
+                        </li>
+                        <li>
+                            <a class="page-scroll" href="#checkpoint">Checkpoint</a>
+                        </li>
+                        <li>
+                            <a class="page-scroll" href="#proposal">Proposal</a>
+                        </li>
+                        <li>
+                            <a class="page-scroll" href="#contact">Contact</a>
+                        </li>
+                    </ul>
+                </div>
+                <!-- /.navbar-collapse -->
+            </div>
+            <!-- /.container-fluid -->
+        </nav>
+        <header>
+            <div class="header-content">
+                <div class="header-content-inner">
+                    <h1>pSFFX</h1>
+                    <hr>
+                    <p>Distributed Suffix Array Construction on Heterogeneous Architectures</p>
+                    <a href="#about" class="btn btn-primary btn-xl page-scroll">Find Out More</a>
+                </div>
+            </div>
+        </header>
+        <section class="bg-primary" id="about">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8 col-lg-offset-2 text-center">
+                        <h2 class="section-heading">What is pSFFX?</h2>
+                        <hr class="light">
+                        <p >pSFFX is a lightweight scalable library for building suffix arrays. It is geared towards large datasets and distributed cluster based construction. </p>
+                        <a href="#applications" class="btn btn-default btn-xl page-scroll">Get Started!</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="applications">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Applications</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-file-archive-o wow bounceIn text-primary"></i>
+                            <h3>Compression</h3>
+                            <p class="text-muted">Suffix arrays are heavily used in text compression. They are a cornerstone of the BWT (Burrows Wheeler Transform), used in bzip2. </p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-file-text wow bounceIn text-primary" data-wow-delay=".1s"></i>
+                            <h3>Full Text Indices</h3>
+                            <p class="text-muted">You can easily build data structures for efficient text search queries with a suffix array.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-tasks wow bounceIn text-primary" data-wow-delay=".2s"></i>
+                            <h3>BioInformatics</h3>
+                            <p class="text-muted">Suffix arrays are used in DNA sequencing and assembly.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-area-chart wow bounceIn text-primary" data-wow-delay=".3s"></i>
+                            <h3>Algorithms</h3>
+                            <p class="text-muted">They are a memory efficient alternative to suffix trees.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section id="links" class="bg-dark">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Links</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container text-center">
+                <div class="row">
+                    <a href="https://github.com/snnynhr/ParallelSuffixArrays" class="btn btn-default btn-xl wow">View On <strong>GitHub</strong></a>
+                    <a href="https://github.com/snnynhr/ParallelSuffixArrays/zipball/master" class="btn btn-default btn-xl wow">Download <strong>ZIP File</strong></a>
+                    <a href="https://github.com/snnynhr/ParallelSuffixArrays/tarball/master" class="btn btn-default btn-xl wow">Download <strong>TAR Ball</strong></a>
+                </div>
+            </div>
+        </section>
+        <!--       <section id="description">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Description</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    TBD.
+                </div>
+            </div>
+        </section>
+        <aside class="bg-dark">
+        </aside> -->
+        <section id="checkpoint">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Project Checkpoint</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3>
+                    <a id="dschedule" class="anchor" href="#dschedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Detailed Schedule</h3>
+                    <p>
+                        <ul>
+                            <li> <b> [4/18 - 4/21:] </b> Read through Flick and Aluru paper on distributed suffix arrays. Read Kulla and Sanders paper. Design implementation for Latedays cluster. Research and learn about MPI. <br>
+                                <b> Sunny </b>: Begin design and implementation of per node suffix array construction. Write high level code with a modular API which can easily be worked on in parallel. <br>
+                                <b> Tom </b>: Get MPI working on latedays. Develop a test application splitting work across the lateday nodes and test multi-machine functionality. <br><br>
+                            </li>
+                            <li> <b> [4/21 - 4/24:] </b> Study HARD for EXAM 2. <br>
+                                <b> Tom </b>: Research efficient distributed sorting algorithms. <br>
+                                <b> Sunny </b>: Starting implementing modules for pDC3. <br>
+                                <ul>
+                                    <li> K-mer sorting. </li>
+                                    <li> Re-bucketing. </li>
+                                    <li> Reorder to string order. </li>
+                                    <li> Shifting. </li>
+                                    <li> Tuple sorting. </li>
+                                    <li> Data distribution. </li>
+                                    <li> Bucket sorting. </li>
+                                    <li> Update ISA. </li>
+                                </ul>
+                            </li>
+                            <li> <b> [4/25 - 4/28:] </b> Continuing implementation. <br>
+                                <b> Sunny </b>: Implementation of modules. <br>
+                                <b> Tom </b>: Implementation of sorting module + others. <br><br>
+                            </li>
+                            <li> <b> [4/29 - 5/2:] </b> Finishing and testing implementation. <br>
+                                <b> Sunny </b>: Finish implementation. Start testing on basic data sets. <br>
+                                <b> Tom </b>: Find large 10-30GB data sets. <br><br>
+                            </li>
+                            <li> <b> [5/3 - 5/5:] </b> Debugging and optimization. <br>
+                                <b> Sunny </b>: Optimize per machine performance. Try offloading onto Xeon Phi. <br>
+                                <b> Tom </b>: Optimize communication and data distribution. <br><br>
+                            </li>
+                            <li> <b> [5/6 - 5/9:] </b> Prepare for presentation. Develop the demo. <br>
+                                <b> Sunny </b>: Prepare slides and graphs and tables. <br>
+                                <b> Tom </b>: Create a demo showing the construction on Latedays. <br>
+                            </li>
+                        </ul>
+                    </p>
+                    <h3>
+                    <a id="workcompleted" class="anchor" href="#workcompleted" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Stretch goals</h3>
+                    <p>
+                        <ul>
+                            <li> Demo of sample string search or match queries. </li>
+                            <li> Implement Prefix Doubling (more complex algorithm). </li>
+                        </ul>
+                    </p>
+                    <h3>
+                    <a id="workcompleted" class="anchor" href="#workcompleted" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Work Completed</h3>
+                    <p>
+                        We researched numerous parallel approaches to suffix array constructions, both on the CPU, and GPU. We found an excellent source which provides background and a complete taxonomy of the types of suffix array construction algorithms (SACAs) and the varying implementations over the past 30 years. This paper is Puglisi et. al's <a href="http://www.cas.mcmaster.ca/~bill/best/algorithms/07Taxonomy.pdf"> Taxonomy of Suffix Array Construction</a>.
+                    </p>
+                    <p>
+                        We read the following papers describing suffix array construction on the CPU:
+                        <ul>
+                            <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
+                            <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
+                            <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
+                            <li> <a href="https://pdfs.semanticscholar.org/6eeb/4c131cb4039821208e7cb756395810aa9a0a.pdf"> Parallel Lightweight Wavelet Tree, Suffix Array and FM-Index Construction </a></li>
+                        </ul>
+                        In addition, the following papers were for construction on the GPU:
+                        <ul>
+                            <li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
+                            <li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
+                            <li> <a href="http://download.springer.com/static/pdf/62/chp%253A10.1007%252F978-3-642-34109-0_40.pdf?originUrl=http%3A%2F%2Flink.springer.com%2Fchapter%2F10.1007%2F978-3-642-34109-0_40&token2=exp=1460874530~acl=%2Fstatic%2Fpdf%2F62%2Fchp%25253A10.1007%25252F978-3-642-34109-0_40.pdf%3ForiginUrl%3Dhttp%253A%252F%252Flink.springer.com%252Fchapter%252F10.1007%252F978-3-642-34109-0_40*~hmac=bd75e4bf5dde89b600c11b5dadb0c223dbced01ab18013c5cceaf51e46210c06">Parallel Suffix Array Construction for Shared Memory Architectures </a> </li>
+                        </ul>
+                        And finally, these were the papers on distributed suffix array construction:
+                        <ul>
+                            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction. </a> </li>
+                            <li> <a href="http://delivery.acm.org/10.1145/2810000/2807609/a16-flick.pdf?ip=128.237.73.121&id=2807609&acc=ACTIVE%20SERVICE&key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&CFID=747335659&CFTOKEN=47718763&__acm__=1460868043_d6df6e9218c458c4b26bbf6fd43656f0"> Parallel Distributed Memory Construction of Suffix and Longest Common Prefix Arrays </a></li>
+                        </ul>
+                    </p>
+                    <p>
+                        We also downloaded and tried to run Guy Blelloch's <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html"> PBBS (Problem Based Benchmark Suite) for suffix arrays </a>, in which there are implementations of the CPU based parallel DC3 and Prefix doubling algorithms. The benchmark code segfaulted when run in parallel on almost all of the larger (>10MB) datasets. We were not able to find the errors and fix the benchmark.
+                    </p>
+                    <p>
+                        Due to the numerous available and likely highly-optimized implementations of parallel suffix array construction on the CPU, and recent literature on GPU based construction, and the complications in running Guy's benchmark suite, we decided that simply doing CPU and GPU based suffix array construction would not benefit our learning the most. It would also be difficult to implement faster versions using the same algorithm.
+                    </p>
+                    <p>
+                        We instead switched our focus to distributed suffix array construction algorithms. Most of the papers we read were only able to run on data sets of at most 2GB, which can be small, if you are dealing with areas which generally used large datasets (genomics). We want to build a distributed suffix array construction which can handle datasets of 10-30GB while achieving high parallelism. We plan to utilize Latedays to test our algorithm.
+                    </p>
+                    <p>
+                        The papers described in the distributed section show approaches to both parallel DC3 and parallel Prefix doubling. The algorithm for prefix doubling is fairly complex, and in the paper, the testbed was 1024-1600 cores. We believe that on a smaller system like Latedays, parallel DC3 will be the better option since it has less overhead. We plan on building our suffix array construction algorithm using ideas from the Kulla and Sanders paper. As a stretch goal, we will try to implement the other algorithm as well to provide a comparison.
+                    </p>
+                    <h3>
+                    <a id="updateddeliverables" class="anchor" href="#updateddeliverables" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Updated Deliverables</h3>
+                    <p>
+                        What we expect to have:
+                        <ul>
+                            <li> Working implementation which can handle large datasets and achieve comparable speedups. </li>
+                            <li> Demo of algorithm on data set. </li>
+                        </ul>
+                    </p>
+                    <p>
+                        Stretch goals:
+                        <ul>
+                            <li> Implement LCP array along with suffix array. </li>
+                            <li> Implement prefix doubling. </li>
+                        </ul>
+                    </p>
+                    <h3>
+                    <a id="concerns" class="anchor" href="#concerns" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Concerns</h3>
+                    <p>
+                        We will want to test our implementation on datasets that are several gigabytes in size. We don't have enough AFS space to hold these datasets, though.
+                    </p>
+                </div>
+            </div>
+        </section>
+        <aside class="bg-dark">
+        </aside>
+        <section id="proposal">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Project Proposal</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3>
+                    <a id="summary" class="anchor" href="#summary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Summary</h3>
+                    <p>We are going to implement parallel suffix array construction on the latedays cluster. We plan on implementing both a multithreaded CPU algorithm and a CUDA GPU-based algorithm, and compare our performance to existing benchmarks.</p>
+                </div>
+                <div class="row">
+                    <h3>
+                    <a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h3>
+                    <p>A suffix array is a data structure that stores the suffixes of a word in sorted order. It stores an array which at entry i stores the starting index of the lexicographically ith smallest suffix. The suffix array is related to the suffix tree data structure, but uses a smaller memory footprint (5 times less) and has the benefit of cache locality.
+                        <br><br>
+                        Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
+                        <br><br>
+                        There are two common algorithms for suffix array construction. The DC3 algorithm solves a subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
+                        <br><br>
+                        The Prefix doubling algorithm works by sorting suffixes by first 1 character, then by first 2 characters, then by first 4 characters, then by first 8 characters, and so on. It often uses radix sorting.
+                        <br><br>
+                        The papers listed below in Resources describe variants and improvements to the above algorithms.
+                    </p>
+                </div>
+                <div class="row">
+                    <h3>
+                    <a id="challenges" class="anchor" href="#challenges" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Challenges</h3>
+                    <p>
+                        For the prefix-doubling algorithm, each round of sorting depends on the previous round of sorting. Sorting doesn't have a great amount of locality and has considerable divergence. Also, prefixes are put in buckets as sorting occurs, but the distrbution of data within the buckets is data-dependent and will likely be non-uniform. This leads to load imbalance.
+                        <br><br>
+                        For the DC3 algorithm, the recursive structure creates many dependencies. In addition, it uses some comparison-based sorting and merging, which can be expensive for strings.
+                        <br><br>
+                        We must figure out which algorithm is fastest and find ways to mitigate its flaws.
+                        <br><br>
+                        Lastly, GPUs have limited memory, so when we divide up work, we must find a reasonable way to portion the large inputs into chunks such that we minimize communication requirements and maximize locality.
+                    </p>
+                </div>
+                <div class="row">
+                    <h3>
+                    <a id="resources" class="anchor" href="#resources" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Resources</h3>
+                    <p>
+                        Paper references:
+                        <br>
+                        GPU based construction:
+                        <ul>
+                            <li> <a href="http://dl.acm.org/citation.cfm?id=2442536">Parallel suffix array and least common prefix for the GPU </a> </li>
+                            <li> <a href="http://link.springer.com/chapter/10.1007/978-3-662-48096-0_44">Fast Parallel Suffix Array on the GPU </a> </li>
+                            <li> <a href="http://dl.acm.org/citation.cfm?id=2442536"> Parallel suffix array and least common prefix for the GPU </a> </li>
+                            <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
+                        </ul>
+                        Parallel construction:
+                        <ul>
+                            <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
+                            <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
+                        </ul>
+                        Starter code, test inputs, baseline benchmarks:
+                        <a href="http://www.cs.cmu.edu/~pbbs/benchmarks.html"> Problem Based Benchmark Suite (PBBS) </a>
+                        <br><br>
+                        We will have to scan papers and examine source code to determine if there is a suitable benchmark for GPU-based algorithms.
+                        <br><br>
+                        The benchmark parallel implementation is in Cilk. We plan on using this framework, and will investigate other possible parallel frameworks, like OpenMP or simply pthreads.
+                    </p>
+                </div>
+                <div class="row">
+                    <h3>
+                    <a id="goals" class="anchor" href="#goals" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Goals and Deliverables</h3>
+                    <p>
+                        Plan to achieve:
+                        <ul>
+                            <li> Write an implementation for the CPU that is about as fast as the PBBS implementation. This should be achievable if we can understand the algorithm in the PBBS implementation. It's not clear whether or not we can reasonably get significant speedup. </li>
+                            <li> Write an implementation for the GPU that is significantly faster than the PBBS implementation. Speedup is possible due to the theoretically high instruction throughput of GPUs compared to CPUs. </li>
+                        </ul>
+                        Hope to achieve:
+                        <ul>
+                            <li> Write an implementation for the CPU that is significantly faster than the PBBS implementation. </li>
+                            <li> Extend our implementation to a distributed multi-node efficient implementation which scales reasonably well. </li>
+                        </ul>
+                        Deliverables:
+                        <ul>
+                            <li> We will show speedup graphs at the parallelism competition. </li>
+                            <li> We will aim to have a real-time demo of our algorithm working and its performance improvements compared to the baseline. </li>
+                        </ul>
+                    </p>
+                </div>
+                <div class="row">
+                    <h3>
+                    <a id="platform" class="anchor" href="#platform" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Platform</h3>
+                    <p>The latedays cluster has multiple nodes and GPUs, so we can test both a parallel distributed version and a GPU version.</p>
+                    <h3>
+                    <a id="schedule" class="anchor" href="#schedule" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Schedule</h3>
+                    <p>
+                        <ul>
+                            <li> [4/1 - 4/8:] Read papers which describe parallel suffix array algorithms. Understand different algorithms and their behaviors, runtimes, etc. Determine if there is source code for their implementations. Test possible implementations on benchmark data. Understand benchmark implementations. Start developing our own implementations </li>
+                            <li> [4/8 - 4/15:] Write a parallel implementation for CPU, comparing with benchmark.</li>
+                            <li> [4/15 - 4/22:] Continue writing CPU implementation. Write parallel implementation for GPU. </li>
+                            <li> [4/22 - 4/29:] Continue writing the suffix array implementation for GPU. </li>
+                            <li> [4/29 - 5/6:] Crunch through the code and continue to optimize and test our implementations, using our 418 skills. Compile detailed runtime analysis over benchmark data sets. Profile implementations to squeeze out performance. </li>
+                            <li> [5/6 - 5/9] Prepare for presentation. Develop the demo. </li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+        </section>
+        <aside class="bg-dark">
+        </aside>
+        <!--   <section class="no-padding" id="portfolio">
+            <div class="container-fluid">
+                <div class="row no-gutter">
+                    <div class="col-lg-4 col-sm-6">
+                        <a href="#" class="portfolio-box">
+                            <img src="img/portfolio/1.jpg" class="img-responsive" alt="">
+                            <div class="portfolio-box-caption">
+                                <div class="portfolio-box-caption-content">
+                                    <div class="project-category text-faded">
+                                        Category
+                                    </div>
+                                    <div class="project-name">
+                                        Project Name
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <a href="#" class="portfolio-box">
+                            <img src="img/portfolio/2.jpg" class="img-responsive" alt="">
+                            <div class="portfolio-box-caption">
+                                <div class="portfolio-box-caption-content">
+                                    <div class="project-category text-faded">
+                                        Category
+                                    </div>
+                                    <div class="project-name">
+                                        Project Name
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <a href="#" class="portfolio-box">
+                            <img src="img/portfolio/3.jpg" class="img-responsive" alt="">
+                            <div class="portfolio-box-caption">
+                                <div class="portfolio-box-caption-content">
+                                    <div class="project-category text-faded">
+                                        Category
+                                    </div>
+                                    <div class="project-name">
+                                        Project Name
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <a href="#" class="portfolio-box">
+                            <img src="img/portfolio/4.jpg" class="img-responsive" alt="">
+                            <div class="portfolio-box-caption">
+                                <div class="portfolio-box-caption-content">
+                                    <div class="project-category text-faded">
+                                        Category
+                                    </div>
+                                    <div class="project-name">
+                                        Project Name
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <a href="#" class="portfolio-box">
+                            <img src="img/portfolio/5.jpg" class="img-responsive" alt="">
+                            <div class="portfolio-box-caption">
+                                <div class="portfolio-box-caption-content">
+                                    <div class="project-category text-faded">
+                                        Category
+                                    </div>
+                                    <div class="project-name">
+                                        Project Name
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-lg-4 col-sm-6">
+                        <a href="#" class="portfolio-box">
+                            <img src="img/portfolio/6.jpg" class="img-responsive" alt="">
+                            <div class="portfolio-box-caption">
+                                <div class="portfolio-box-caption-content">
+                                    <div class="project-category text-faded">
+                                        Category
+                                    </div>
+                                    <div class="project-name">
+                                        Project Name
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section> -->
+        <section id="contact">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-8 col-lg-offset-2 text-center">
+                        <h2 class="section-heading"> Authors and Contributors </h2>
+                        <hr class="primary">
+                        <p> Sunny Nahar (<a href="https://github.com/snnynhr" class="user-mention">@snnynhr</a>) and Tom Tseng (<a href="https://github.com/tomtseng" class="user-mention">@tomtseng</a>).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- jQuery -->
+        <script src="js/jquery.js"></script>
+        <!-- Bootstrap Core JavaScript -->
+        <script src="js/bootstrap.min.js"></script>
+        <!-- Plugin JavaScript -->
+        <script src="js/jquery.easing.min.js"></script>
+        <script src="js/jquery.fittext.js"></script>
+        <script src="js/wow.min.js"></script>
+        <!-- Custom Theme JavaScript -->
+        <script src="js/creative.js"></script>
+    </body>
 </html>
