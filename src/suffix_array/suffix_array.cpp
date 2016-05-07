@@ -268,6 +268,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
     int dc3_elem_array_size_int = dc3_elem_array_size;
 
+    // send sizes of local arrays in preparation for sending the local arrays
     MPI_Gather(&dc3_elem_array_size_int, 1, MPI_INT,
                &sizes[0], 1, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
 
@@ -280,46 +281,41 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
       all_names = new int[total_size];
     }
 
+    // send local arrays to root
     MPI_Gatherv(names_int, dc3_elem_array_size_int, MPI_INT,
                 all_names, sizes, displ, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
 
     if (myid == numprocs - 1) {
       all_SA = new int[total_size];
 
-      fprintf(stderr, "names:");
-      for (int i = 0; i < total_size; i++)
-        fprintf(stderr, " %d", all_names[i]);
-      fprintf(stderr, "\n");
-
+      // recurse
       sais_int(all_names, all_SA, total_size, total+1);
-
-      fprintf(stderr, "SA:");
-      for (int i = 0; i < total_size; i++)
-        fprintf(stderr, " %d", all_SA[i]);
-      fprintf(stderr, "\n");
 
       delete[] all_names;
     }
 
     int *local_SA = new int[dc3_elem_array_size];
 
+    // send result of recursive call back to nodes
     MPI_Scatterv(all_SA, sizes, displ, MPI_INT,
                  local_SA, dc3_elem_array_size_int, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
 
+    int global_idx;
+
+    // tell each processor what their index their array starts on globally
+    MPI_Scatter(displ, 1, MPI_INT,
+                &global_idx, 1, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
+
     for (int i = 0; i < dc3_elem_array_size_int; i++) {
-      P[i].word = i + 1;
-      P[i].index = map_back(local_SA[i], (file_size - 1) / 3);
-      fprintf(stderr, "(%lu, %lu) ", P[i].word, P[i].index);
+      P[i].word = global_idx + i + 1;
+      P[i].index = map_back(local_SA[i], (file_size + 1) / 3);
     }
 
     delete[] sizes;
     delete[] displ;
     delete[] all_SA;
     delete[] local_SA;
-    fprintf(stderr, "%d done recurring\n", myid);
   }
-
-
 
   // Sort P by second element. This aids in next component's construction.
   ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
