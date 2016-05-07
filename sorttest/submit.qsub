@@ -16,5 +16,4 @@ cd $PBS_O_WORKDIR
 #echo $NODE_LIST
 
 
-
-/usr/lib64/openmpi/bin/mpirun --verbose --display-allocation -machinefile $PBS_NODEFILE --mca btl tcp,sm,self -bind-to core:overload-allowed ~/ParallelSuffixArrays/sorttest/sorttest
+/usr/lib64/openmpi/bin/mpirun --verbose --display-allocation -machinefile $PBS_NODEFILE --mca btl_tcp_if_include em1  -bind-to core:overload-allowed ~/ParallelSuffixArrays/sorttest/sorttest
