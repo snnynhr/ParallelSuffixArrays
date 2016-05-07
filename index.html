@@ -44,6 +44,9 @@
                             <a class="page-scroll" href="#about">About</a>
                         </li>
                         <li>
+                            <a class="page-scroll" href="#benefits">Benefits</a>
+                        </li>
+                        <li>
                             <a class="page-scroll" href="#applications">Applications</a>
                         </li>
                         <li>
@@ -69,7 +72,8 @@
                 <div class="header-content-inner">
                     <h1>pSFFX</h1>
                     <hr>
-                    <p>Distributed Suffix Array Construction on Heterogeneous Architectures</p>
+                    <h2>Distributed Suffix Array Construction on Heterogeneous Architectures</h2>
+                    <hr>
                     <a href="#about" class="btn btn-primary btn-xl page-scroll">Find Out More</a>
                 </div>
             </div>
@@ -80,8 +84,50 @@
                     <div class="col-lg-8 col-lg-offset-2 text-center">
                         <h2 class="section-heading">What is pSFFX?</h2>
                         <hr class="light">
-                        <p >pSFFX is a lightweight scalable library for building suffix arrays. It is geared towards large datasets and distributed cluster based construction. </p>
-                        <a href="#applications" class="btn btn-default btn-xl page-scroll">Get Started!</a>
+                        <h4>pSFFX is a lightweight scalable library for building suffix arrays. It is geared towards large datasets and distributed cluster based construction. </h4>
+                        <a href="#benefits" class="btn btn-default btn-xl page-scroll">Get Started!</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="bg-dark" id="benefits">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Why choose pSFFX?</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-rocket wow bounceIn text-primary"></i>
+                            <h3>Speed</h3>
+                            <p class="text-muted">Uses the DC3/Skew method to achieve a linear time construction.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-line-chart wow bounceIn text-primary" data-wow-delay=".1s"></i>
+                            <h3>Scalability</h3>
+                            <p class="text-muted">Low communication allows it to scale from 1 to 15 nodes.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-refresh wow bounceIn text-primary" data-wow-delay=".2s"></i>
+                            <h3>Memory efficiency</h3>
+                            <p class="text-muted">Optimized to build large data sets and efficiently utilize memory.</p>
+                        </div>
+                    </div>
+                    <div class="col-lg-3 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-server wow bounceIn text-primary" data-wow-delay=".3s"></i>
+                            <h3>Integrated API</h3>
+                            <p class="text-muted"> Can make API calls from any MPI supporting program.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -101,47 +147,57 @@
                         <div class="service-box">
                             <i class="fa fa-4x fa-file-archive-o wow bounceIn text-primary"></i>
                             <h3>Compression</h3>
-                            <p class="text-muted">Suffix arrays are heavily used in text compression. They are a cornerstone of the BWT (Burrows Wheeler Transform), used in bzip2. </p>
+                            <p class="text-muted">Suffix arrays are heavily used in text compression. It is a critical component of the BWT (Burrows Wheeler Transform), used in bzip2. </p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-6 text-center">
                         <div class="service-box">
                             <i class="fa fa-4x fa-file-text wow bounceIn text-primary" data-wow-delay=".1s"></i>
                             <h3>Full Text Indices</h3>
-                            <p class="text-muted">You can easily build data structures for efficient text search queries with a suffix array.</p>
+                            <p class="text-muted">You can easily build data structures for efficient text search and count queries with a suffix array.</p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-6 text-center">
                         <div class="service-box">
                             <i class="fa fa-4x fa-tasks wow bounceIn text-primary" data-wow-delay=".2s"></i>
                             <h3>BioInformatics</h3>
-                            <p class="text-muted">Suffix arrays are used in DNA sequencing and assembly.</p>
+                            <p class="text-muted">Suffix arrays used to perform DNA sequencing, read mapping, and assembly.</p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-6 text-center">
                         <div class="service-box">
                             <i class="fa fa-4x fa-area-chart wow bounceIn text-primary" data-wow-delay=".3s"></i>
                             <h3>Algorithms</h3>
-                            <p class="text-muted">They are a memory efficient alternative to suffix trees.</p>
+                            <p class="text-muted">They are a memory efficient alternative to suffix trees, and are useful in string processing and NLP data structures.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
         <section id="links" class="bg-dark">
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-12 text-center">
-                        <h2 class="section-heading">Links</h2>
-                        <hr class="primary">
-                    </div>
-                </div>
-            </div>
             <div class="container text-center">
                 <div class="row">
-                    <a href="https://github.com/snnynhr/ParallelSuffixArrays" class="btn btn-default btn-xl wow">View On <strong>GitHub</strong></a>
-                    <a href="https://github.com/snnynhr/ParallelSuffixArrays/zipball/master" class="btn btn-default btn-xl wow">Download <strong>ZIP File</strong></a>
-                    <a href="https://github.com/snnynhr/ParallelSuffixArrays/tarball/master" class="btn btn-default btn-xl wow">Download <strong>TAR Ball</strong></a>
+                    <div class="col-lg-4 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-github wow bounceIn text-primary"></i>
+                            <h3></h3>
+                            <a href="https://github.com/snnynhr/ParallelSuffixArrays" class="btn btn-default btn-xl wow">View On <strong>GitHub</strong></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-file-archive-o wow bounceIn text-primary"></i>
+                            <h3></h3>
+                            <a href="https://github.com/snnynhr/ParallelSuffixArrays/zipball/master" class="btn btn-default btn-xl wow">Download <strong>ZIP File</strong></a>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-md-6 text-center">
+                        <div class="service-box">
+                            <i class="fa fa-4x fa-file-archive-o wow bounceIn text-primary"></i>
+                            <h3></h3>
+                            <a href="https://github.com/snnynhr/ParallelSuffixArrays/tarball/master" class="btn btn-default btn-xl wow">Download <strong>TAR Ball</strong></a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
