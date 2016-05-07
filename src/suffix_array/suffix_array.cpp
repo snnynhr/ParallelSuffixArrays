@@ -101,7 +101,11 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  Component 1:
    *  S = <(T[i,i+2], i) : i \in [0,n), i mod 3 \not= 0>
    */
-
+  double elapsed = 0;
+  if (!myid) {
+    fprintf(stdout, "Building component 1\n");
+    elapsed = MPI::Wtime();
+  }
   // We need to calculate the number of positions which are not 0 mod 3.
   const uint32_t sm = (3 - (offset % 3)) % 3;
   const uint64_t dc3_elem_array_size =
@@ -133,6 +137,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  Component 2:
    *  Sort S by first component.
    */
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 1: %f\n", MPI::Wtime() - elapsed);
+    elapsed = MPI::Wtime();
+    fprintf(stdout, "Building component 2\n");
+  }
   ssort::samplesort(S, S + dc3_elem_array_size, compare_dc3_elem, mpi_dc3_elem,
                     numprocs, myid);
 
@@ -140,6 +150,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  Component 3:
    *  P := name (S)
    */
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 2: %f\n", MPI::Wtime() - elapsed);
+    elapsed = MPI::Wtime();
+    fprintf(stdout, "Building component 3\n");
+  }
 
   // First we calculate a boolean if the curr string is not equal to previous.
   // To check if not equal to previous, first element of this process needs the
@@ -197,6 +213,13 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  SA^{12} = pDC3(<c : (c,i) in P>)
    *  P := <(j+1, mapBack(SA^{12}[j], n/3)) : j < 2n/3>
    */
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 3: %f\n", MPI::Wtime() - elapsed);
+    elapsed = MPI::Wtime();
+    fprintf(stdout, "Building component 4\n");
+  }
+
   uint64_t total = 0;
   uint32_t is_unique = 0;
   if (myid == numprocs - 1) {
@@ -225,18 +248,19 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   }
 
   // Not unique
-  if (!is_unique) {
-    // Permute.
-    ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem, mpi_dc3_elem,
-                      numprocs, myid);
-    for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-      // reuse stack memory;
-      names[i] = P[i].word;
-    }
+  // if (!is_unique) {
+  //   // Permute.
+  //   ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem,
+  //   mpi_dc3_elem,
+  //                     numprocs, myid);
+  //   for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+  //     // reuse stack memory;
+  //     names[i] = P[i].word;
+  //   }
 
-    // @TODO: Local compute: need to expand to distributed
-    // sais_int()
-  }
+  //   // @TODO: Local compute: need to expand to distributed
+  //   // sais_int()
+  // }
 
   // Sort P by second element. This aids in next component's construction.
   ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
@@ -250,8 +274,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  S_2 := <(c, T[i], T[i+1], c'', i) : i mod 3 = 2), (c,i), (c'', i+2) in
    P>
    */
-
-  MPI_Barrier(MPI_COMM_WORLD);  // test only
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 4: %f\n", MPI::Wtime() - elapsed);
+    elapsed = MPI::Wtime();
+    fprintf(stdout, "Building component 5\n");
+  }
 
   // We need the first two elements of the next process.
   if (myid != 0) {
@@ -358,6 +386,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  Component 6:
    *  Sort S_0 union S_1 union S_2 using compare operator in paper.
    */
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 5: %f\n", MPI::Wtime() - elapsed);
+    elapsed = MPI::Wtime();
+    fprintf(stdout, "Building component 6\n");
+  }
 
   ssort::samplesort(SS, SS + size, compare_tuple_elem, mpi_dc3_tuple_elem,
                     numprocs, myid);
@@ -366,9 +400,20 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
    *  Component 7:
    *  Return last component of (s : s in S).
    */
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 6: %f\n", MPI::Wtime() - elapsed);
+    elapsed = MPI::Wtime();
+    fprintf(stdout, "Building component 7\n");
+  }
+
   for (uint64_t i = 0; i < size; i++) {
     suffix_array[i] = SS[i].index;
   }
 
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (!myid) {
+    fprintf(stdout, "Runtime of component 7: %f\n", MPI::Wtime() - elapsed);
+  }
   return 0;
 }

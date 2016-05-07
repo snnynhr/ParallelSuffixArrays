@@ -1,9 +1,12 @@
 #!/bin/sh
-#PBS -lwalltime=1:00
-#PBS -lnodes=3:ppn=24
-#PBS -N SuffixArray
+#PBS -lwalltime=10:00
+#PBS -lnodes=4:ppn=12
+#PBS -N small
+#PBS -q phi
 
 cd $PBS_O_WORKDIR
 
-source ~/ParallelSuffixArrays/jobs/openmpi-setup.sh
-mpirun -bind-to core:overload-allowed ~/ParallelSuffixArrays/src/suffixArray $1 
+#source ~/ParallelSuffixArrays/jobs/openmpi-setup.sh
+
+
+/usr/lib64/openmpi/bin/mpirun --verbose --display-allocation -machinefile $PBS_NODEFILE --mca btl tcp,sm,self --mca btl_tcp_if_include em1 -bind-to core:overload-allowed ~/ParallelSuffixArrays/src/suffixArray $1 
