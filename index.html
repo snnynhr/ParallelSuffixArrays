@@ -53,6 +53,9 @@
                             <a class="page-scroll" href="#links">Links</a>
                         </li>
                         <li>
+                            <a class="page-scroll" href="#description">Description</a>
+                        </li>
+                        <li>
                             <a class="page-scroll" href="#checkpoint">Checkpoint</a>
                         </li>
                         <li>
@@ -201,23 +204,58 @@
                 </div>
             </div>
         </section>
-        <!--       <section id="description">
+        <section id="description">
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12 text-center">
-                        <h2 class="section-heading">Description</h2>
+                        <h2 class="section-heading">Suffix Array Construction</h2>
                         <hr class="primary">
                     </div>
                 </div>
             </div>
             <div class="container">
                 <div class="row">
-                    TBD.
+                    <h3> Summary</h3>
+                    <p>
+                        We implemented suffix array construction on large data sets by distributing the data across several nodes and communicating with MPI.
+                    </p>
+                    <h3> Results </h3>
+                    <p>
+                        Upcoming.
+                    </p>
+                    <h3> Background </h3>
+                    <p>
+                        The goal is to take as input a text file or a character array and to output an
+                        array SA where SA[i] is the starting index of the i-th suffix sorted in
+                        descending lexicographical order.
+                    </p>
+                    <p>
+                        The DC3 algorithm for constructing suffix arrays is as follows:
+                        <ul>
+                            <li> For each index, get the triplet of three consecutive characters starting at that index. </li>
+                            <li> Recursively solve for the suffix array of these triplets for the indices i where i mod 3 is not zero. </li>
+                            <li> Sort the the triplet suffixes for the indices i where i mod 3 is zero, using the result of the recursive call to help determine the ordering </li>
+                            <li> Merge the two arrays of sorted suffixes. </li>
+                        </ul>
+                    </p>
+                    <p>
+                        For large datafiles on the order of several gigabytes, it is not memory efficient to attempt to compute the suffix array on a single machine. We thus
+                        aim to construct the suffix array in parallel across several machines. The bulk of the work consists several rounds of sorting. This can be parallelized to improve efficiency even when the datafiles are not huge. In addition, the algorithm iterates over arrays several times, which is obviously parallelizable.
+                    </p>
+                    <h3> Approach </h3>
+                    <p>
+                        We wrote our implementation in C++ and used MPI to communicate across nodes on the Latedays cluster.
+                        The sequential DC3 algorithm can be adapted to work in parallel. However, merging is difficult to parallelize, so we choose to sort everything instead of
+                        merging. To parallelize the algorithm, we spawned several processes on each node and gave roughly equal contiguous chunks of the input to each process. Except for sorting, we managed to avoid major communication among nodes. For our sorting algorithm, we implemented samplesort. Sorting unfortunately incurs a lot of communication. This communication cost can be reduced to some extent by choosing a compact way of presenting the elements to be sorted.
+                    </p>
+                    <p>
+                        For constructing the suffix array on small inputs, we use a sequential implementation by Yuta Mori called "sais."
+                    </p>
                 </div>
             </div>
         </section>
         <aside class="bg-dark">
-        </aside> -->
+        </aside>
         <section id="checkpoint">
             <div class="container">
                 <div class="row">
