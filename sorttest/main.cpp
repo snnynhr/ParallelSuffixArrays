@@ -74,11 +74,16 @@ void sorttest(int *arr, int n, int numprocs, int myid, std::string test_name) {
 
 int main() {
   int numprocs,
-      myid;
+      myid,
+      namelen;
+  char processor_name[MPI_MAX_PROCESSOR_NAME];
 
   MPI_Init(NULL, NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+  MPI_Get_processor_name(processor_name, &namelen);
+
+  printf("Process %d on %s\n", myid, processor_name);
 
 
   int n = 1000;

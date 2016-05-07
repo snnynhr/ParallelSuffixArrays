@@ -1,4 +1,4 @@
-CC=/opt/openmpi/bin/mpic++ 
+CC=/usr/lib64/openmpi/bin/mpic++
 CFLAGS=-Wall -Wextra
 
 sorttest: main.cpp ssort.hpp

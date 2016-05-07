@@ -1,9 +1,9 @@
 #!/bin/sh
 #PBS -lwalltime=4:00
-#PBS -lnodes=3:ppn=6
+#PBS -lnodes=3:ppn=24
 #PBS -N result
+#pbs -q phi
 
 cd $PBS_O_WORKDIR
 
-source ~/ParallelSuffixArrays/jobs/openmpi-setup.sh
-mpirun ~/ParallelSuffixArrays/sorttest/sorttest
+/usr/lib64/openmpi/bin/mpirun --verbose --display-allocation -machinefile $PBS_NODEFILE --mca btl_tcp_if_include em1 -bind-to core:overload-allowed sorttest
