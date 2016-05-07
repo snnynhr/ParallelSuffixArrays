@@ -1,9 +1,20 @@
 #!/bin/sh
-#PBS -lwalltime=1:00
-#PBS -lnodes=3:ppn=6
+#PBS -lwalltime=10:00
+#PBS -lnodes=3:ppn=24
 #PBS -N result
 
 cd $PBS_O_WORKDIR
 
-source ~/ParallelSuffixArrays/jobs/openmpi-setup.sh
-mpirun ~/ParallelSuffixArrays/sorttest/sorttest
+#source ~/ParallelSuffixArrays/jobs/openmpi-setup.sh
+
+#cat $PBS_NODEFILE > nodes
+# How many cores total do we have?
+#NO_OF_CORES=`cat $PBS_NODEFILE | egrep -v '^#'\|'^$' | wc -l | awk '{print $1}'`
+#NODE_LIST=`cat $PBS_NODEFILE `
+#
+# Just for kicks, see which nodes we got.
+#echo $NODE_LIST
+
+
+
+/usr/lib64/openmpi/bin/mpirun --verbose --display-allocation -machinefile $PBS_NODEFILE --mca btl tcp,sm,self -bind-to core:overload-allowed ~/ParallelSuffixArrays/sorttest/sorttest

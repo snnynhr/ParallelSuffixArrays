@@ -1,5 +1,6 @@
 #include "suffix_array.h"
 #include "../sort/ssort.h"
+#include "../sais/sais.h"
 
 typedef struct dc3_elem {
   uint64_t word;
@@ -64,6 +65,10 @@ bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
     std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
     return ll < rr;
   }
+}
+
+inline uint64_t map_back(uint64_t i, uint64_t s) {
+  return i < s ? 3*i + 1 : 3*(i - s) + 2;
 }
 
 SuffixArray::SuffixArray() {
@@ -248,19 +253,92 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   }
 
   // Not unique
-  // if (!is_unique) {
-  //   // Permute.
-  //   ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem,
-  //   mpi_dc3_elem,
-  //                     numprocs, myid);
-  //   for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
-  //     // reuse stack memory;
-  //     names[i] = P[i].word;
-  //   }
+  if (!is_unique) {
+    // Permute.
+    ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem, mpi_dc3_elem,
+                      numprocs, myid);
 
-  //   // @TODO: Local compute: need to expand to distributed
-  //   // sais_int()
-  // }
+    /*
+     * Use SAIS for recursive case. TODO expand to distributed version
+     *
+     * Note: this converts names[], sizes, etc to ints. I do this because SAIS
+     * takes an int array and because MPI functions take int arrays. Also, I use
+     * MPI_Gatherv to move everything to one process, and this takes int arrays
+     * for sizes and displacements.
+     * This is OK because
+     *   1) If we call SAIS for the recursive case immediately, then the names
+     *      are triplets of chars. Then there are only up to 2^24 possible
+     *      distinct names, so this will fit in an int.
+     *   2) We probably don't want to call SAIS (sequential) if
+     *      we have over 2^31 distinct names or elements anyway
+     * If need be, though, we could try to modify SAIS to work on
+     * long long arrays.
+     */
+    int *names_int = new int[dc3_elem_array_size];
+
+    for (uint64_t i = 0; i < dc3_elem_array_size; i++)
+      names_int[i] = P[i].word;
+
+    int *sizes = NULL;
+    int *displ = NULL;
+    int *all_names = NULL;
+    int *all_SA = NULL;
+    int total_size;
+    if (myid == numprocs - 1) {
+      sizes = new int[numprocs];
+      displ = new int[numprocs];
+    }
+
+    int dc3_elem_array_size_int = dc3_elem_array_size;
+
+    // send sizes of local arrays in preparation for sending the local arrays
+    MPI_Gather(&dc3_elem_array_size_int, 1, MPI_INT,
+               &sizes[0], 1, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
+
+    if (myid == numprocs - 1) {
+      displ[0] = 0;
+      for (int i = 1; i < numprocs; i++) // exclusive scan
+        displ[i] = displ[i - 1] + sizes[i - 1];
+      total_size = displ[numprocs - 1] + sizes[numprocs - 1];
+
+      all_names = new int[total_size];
+    }
+
+    // send local arrays to root
+    MPI_Gatherv(names_int, dc3_elem_array_size_int, MPI_INT,
+                all_names, sizes, displ, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
+
+    if (myid == numprocs - 1) {
+      all_SA = new int[total_size];
+
+      // recurse
+      sais_int(all_names, all_SA, total_size, total+1);
+
+      delete[] all_names;
+    }
+
+    int *local_SA = new int[dc3_elem_array_size];
+
+    // send result of recursive call back to nodes
+    MPI_Scatterv(all_SA, sizes, displ, MPI_INT,
+                 local_SA, dc3_elem_array_size_int, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
+
+    int global_idx;
+
+    // tell each processor what their index their array starts on globally
+    MPI_Scatter(displ, 1, MPI_INT,
+                &global_idx, 1, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
+
+    for (int i = 0; i < dc3_elem_array_size_int; i++) {
+      P[i].word = global_idx + i + 1;
+      P[i].index = map_back(local_SA[i], (file_size + 1) / 3);
+    }
+
+    delete[] sizes;
+    delete[] displ;
+    delete[] all_SA;
+    delete[] local_SA;
+  }
 
   // Sort P by second element. This aids in next component's construction.
   ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,

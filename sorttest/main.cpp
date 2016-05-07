@@ -27,24 +27,28 @@ void sorttest(int *arr, int n, int numprocs, int myid, std::string test_name) {
 
   if (myid == 0)
     all_sizes = new int[numprocs];
-
+  if(!myid && all_sizes == NULL) {
+	printf("failure\n");
+  }
+  //MPI_Barrier(MPI_COMM_WORLD);
+  if(!myid) printf("gathering...\n");
   MPI_Gather(&n, 1, MPI_INT, all_sizes, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
+  
   if (myid == 0) {
     displacements = exclusive_sum(all_sizes, numprocs);
     total_size = displacements[numprocs-1] + all_sizes[numprocs-1];
     correct_result = new int[total_size];
     ssort_result = new int[total_size];
   }
-
+  if(!myid) printf("gatherv...\n");
   MPI_Gatherv(arr, n, MPI_INT, correct_result, all_sizes, displacements,
               MPI_INT, 0, MPI_COMM_WORLD);
-
+  if(!myid) printf("local sort\n");
   if (myid == 0) 
     std::sort(correct_result, correct_result+total_size);
 
   /* get samplesort result */
-
+  if(!myid) printf("samplesort\n");
   ssort::samplesort(arr, arr+n, std::less<int>(), MPI_INT, numprocs, myid);
 
   // samplesort should preserve sizes of original input arrays,
@@ -79,16 +83,18 @@ int main() {
   MPI_Init(NULL, NULL);
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-
-
-  int n = 1000;
+  printf("Hi from %d out of %d\n", myid, numprocs);
+  
+  int n = 100;
+  if(!myid)
+  printf("testing uniform on %d\n", n);
   int *arr = new int[n];
   for (int i = 0; i < n; ++i)
     arr[i] = prng(myid*n+i);
   sorttest(arr, n, numprocs, myid, "uniform sizes");
   delete[] arr;
 
-
+  if(!myid) printf("Testing small\n");
   n = 1;
   arr = new int[n];
   for (int i = 0; i < n; ++i)
@@ -97,7 +103,8 @@ int main() {
   delete[] arr;
 
 
-  n = 1000 + prng(myid);
+  if(!myid) printf("Testing variable\n");
+  n = 1000000 + prng(myid);
   arr = new int[n];
   for (int i = 0; i < n; ++i)
     arr[i] = prng(myid*n+i);
@@ -105,7 +112,8 @@ int main() {
   delete[] arr;
 
 
-  n = 1000;
+  if(!myid) printf("testing equal\n");
+  n = 1000000;
   arr = new int[n];
   for (int i = 0; i < n; ++i)
     arr[i] = (i % 2);

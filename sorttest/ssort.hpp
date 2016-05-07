@@ -162,7 +162,7 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
                   MPI_Datatype mpi_dtype, int numprocs, int myid) {
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
   const int num_splitters = numprocs - 1;
-
+  if(!myid) printf("getting splitters\n");
   value_type *splitters =
       (value_type *)get_splitters(begin, end, comp, mpi_dtype, numprocs, myid);
 
@@ -197,7 +197,7 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
     }
   }
   send_split_counts[num_splitters] = std::distance(s_pos, end);
-
+  if(!myid) printf("calling mpialltoall\n");
   // processor i will receive all elements in bucket i across all processors,
   // so send bucket sizes in order to know how much space to allocate
   int *recv_split_counts = new int[numprocs];
@@ -215,7 +215,7 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
   MPI_Alltoallv(begin, send_split_counts, send_displacements, mpi_dtype,
                 bucket_elems, recv_split_counts, recv_displacements, mpi_dtype,
                 MPI_COMM_WORLD);
-
+  if(!myid) printf("doing a merge\n");
   // sort bucket elements
   value_type *sorted_bucket =
       merge(bucket_elems, *bucket_size_ptr, recv_split_counts,
@@ -292,12 +292,13 @@ template <typename _Iter, typename _Compare>
 void samplesort(_Iter begin, _Iter end, _Compare comp, MPI_Datatype mpi_dtype,
                 int numprocs, int myid) {
   // sort locally
+  if(!myid) printf("begin local sort\n");
   std::sort(begin, end, comp);
 
   if (numprocs <= 1) return;
 
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
-
+  if(!myid) printf("call getbuckets\n");
   int bucket_size;
   value_type *sorted_bucket = (value_type *)get_buckets(
       begin, end, comp, &bucket_size, mpi_dtype, numprocs, myid);
@@ -305,7 +306,7 @@ void samplesort(_Iter begin, _Iter end, _Compare comp, MPI_Datatype mpi_dtype,
   // printf("proc %d bucket_size %d\n", myid, bucket_size);
   // printf("Proc %d: bucket holds %d to %d\n", myid, bucket_elems[0],
   // bucket_elems[bucket_size-1]);
-
+  if(!myid) printf("redistributing\n");
   redistribute(begin, end, sorted_bucket, bucket_size, mpi_dtype, numprocs,
                myid);
 
