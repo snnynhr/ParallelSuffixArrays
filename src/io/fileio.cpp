@@ -7,7 +7,7 @@ size_t get_filesize(const char* filename) {
 
 char* file_block_decompose(const char* filename, uint64_t& size,
                            uint64_t& file_size, uint64_t& offset, MPI_Comm comm,
-                           uint64_t alignment) {
+                           uint64_t alignment, uint32_t extra) {
   // get size of input file
   file_size = get_filesize(filename);
 
@@ -48,17 +48,18 @@ char* file_block_decompose(const char* filename, uint64_t& size,
   t.seekg(offset);
   char* data;
   try {
-    data = new char[size + 2];
+    data = new char[size + extra];
   } catch (std::bad_alloc& ba) {
     return NULL;
   }
 
   if (rank < p - 1) {
-    t.readsome(data, size + 2);
+    t.readsome(data, size + extra);
   } else {
     t.readsome(data, size);
-    data[size + 1] = 0;
-    data[size + 2] = 0;
+    for (uint32_t i = 0; i < extra; i++) {
+      data[size + i] = 0;
+    }
   }
   return data;
 }
