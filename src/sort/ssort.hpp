@@ -102,7 +102,8 @@ T *merge(T *bucket_elems, int bucket_size, int *bucket_counts,
 // processor
 template <typename _Iter, typename _Compare>
 void *get_splitters(_Iter begin, _Iter end, _Compare comp,
-                    MPI_Datatype mpi_dtype, int numprocs, int myid) {
+                    MPI_Datatype mpi_dtype, int numprocs, int myid,
+                    MPI_Comm comm) {
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
 
   const int size = std::distance(begin, end);
@@ -125,9 +126,9 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
 
   double ag = MPI::Wtime();
   MPI_Gather(sample, sample_size, mpi_dtype, all_samples, sample_size,
-             mpi_dtype, 0, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: Gather time %f\n", MPI::Wtime() - ag);
+             mpi_dtype, 0, comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: Gather time %f\n", MPI::Wtime() - ag);
 
   // get and broadcast p-1 global splitters, placing them in sample array
   if (myid == 0) {
@@ -148,9 +149,9 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
     */
   }
   ag = MPI::Wtime();
-  MPI_Bcast(sample, sample_size, mpi_dtype, 0, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: Bcast time %f\n", MPI::Wtime() - ag);
+  MPI_Bcast(sample, sample_size, mpi_dtype, 0, comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: Bcast time %f\n", MPI::Wtime() - ag);
 
   delete[] all_samples;
 
@@ -161,12 +162,13 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
 // Buckets are not guaranteed to be evenly sized.
 template <typename _Iter, typename _Compare>
 void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
-                  MPI_Datatype mpi_dtype, int numprocs, int myid) {
+                  MPI_Datatype mpi_dtype, int numprocs, int myid,
+                  MPI_Comm comm) {
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
   const int num_splitters = numprocs - 1;
 
-  value_type *splitters =
-      (value_type *)get_splitters(begin, end, comp, mpi_dtype, numprocs, myid);
+  value_type *splitters = (value_type *)get_splitters(
+      begin, end, comp, mpi_dtype, numprocs, myid, comm);
 
   // split local data into p buckets based on global splitters
   int *send_split_counts = new int[numprocs];
@@ -205,9 +207,9 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
   int *recv_split_counts = new int[numprocs];
   double aa = MPI::Wtime();
   MPI_Alltoall(send_split_counts, 1, MPI_INT, recv_split_counts, 1, MPI_INT,
-               MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: All to all time %f\n", MPI::Wtime() - aa);
+               comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: All to all time %f\n", MPI::Wtime() - aa);
 
   int *send_displacements = exclusive_sum(send_split_counts, numprocs);
   int *recv_displacements = exclusive_sum(recv_split_counts, numprocs);
@@ -220,9 +222,9 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
   double ag = MPI::Wtime();
   MPI_Alltoallv(begin, send_split_counts, send_displacements, mpi_dtype,
                 bucket_elems, recv_split_counts, recv_displacements, mpi_dtype,
-                MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: All to allv time %f\n", MPI::Wtime() - ag);
+                comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: All to allv time %f\n", MPI::Wtime() - ag);
 
   // sort bucket elements
   value_type *sorted_bucket =
@@ -242,7 +244,8 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
 // Redistribute bucket elements to original input array (begin to end)
 template <typename _Iter>
 void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
-                  MPI_Datatype mpi_dtype, int numprocs, int myid) {
+                  MPI_Datatype mpi_dtype, int numprocs, int myid,
+                  MPI_Comm comm) {
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
   value_type *bucket_elems = (value_type *)bucket;
 
@@ -253,9 +256,9 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
   int *all_sizes = new int[2 * numprocs];
 
   double ag = MPI::Wtime();
-  MPI_Allgather(local_sizes, 2, MPI_INT, all_sizes, 2, MPI_INT, MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: Allgather time %f\n", MPI::Wtime() - ag);
+  MPI_Allgather(local_sizes, 2, MPI_INT, all_sizes, 2, MPI_INT, comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: Allgather time %f\n", MPI::Wtime() - ag);
 
   int *send_counts = new int[numprocs];
   int *recv_counts = new int[numprocs];
@@ -267,8 +270,8 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
     global_my_bucket_begin += all_sizes[2 * i + 1];
   }
   size_t global_my_orig_end = global_my_orig_begin + all_sizes[2 * myid];
-  size_t global_my_bucket_end = 
-    global_my_bucket_begin + all_sizes[2 * myid + 1];
+  size_t global_my_bucket_end =
+      global_my_bucket_begin + all_sizes[2 * myid + 1];
 
   size_t curr_orig_begin = 0;
   size_t curr_bucket_begin = 0;
@@ -289,9 +292,10 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
   int *recv_displacements = exclusive_sum(recv_counts, numprocs);
 
   double aa = MPI::Wtime();
-  MPI_Alltoallv(bucket_elems, send_counts, send_displacements, mpi_dtype, begin, recv_counts, recv_displacements, mpi_dtype, MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: Alltoallv time %f\n", MPI::Wtime() - aa);
+  MPI_Alltoallv(bucket_elems, send_counts, send_displacements, mpi_dtype, begin,
+                recv_counts, recv_displacements, mpi_dtype, comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: Alltoallv time %f\n", MPI::Wtime() - aa);
 
   delete[] all_sizes;
   delete[] send_counts;
@@ -304,12 +308,12 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
 // array.
 template <typename _Iter, typename _Compare>
 void samplesort(_Iter begin, _Iter end, _Compare comp, MPI_Datatype mpi_dtype,
-                int numprocs, int myid) {
+                int numprocs, int myid, MPI_Comm comm) {
   // sort locally
   double ag = MPI::Wtime();
   std::sort(begin, end, comp);
-    MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: LOCAL SORT time %f\n", MPI::Wtime() - ag);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: LOCAL SORT time %f\n", MPI::Wtime() - ag);
 
   if (numprocs <= 1) return;
 
@@ -317,18 +321,18 @@ void samplesort(_Iter begin, _Iter end, _Compare comp, MPI_Datatype mpi_dtype,
   ag = MPI::Wtime();
   int bucket_size;
   value_type *sorted_bucket = (value_type *)get_buckets(
-      begin, end, comp, &bucket_size, mpi_dtype, numprocs, myid);
-    MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: GET BUCKETS time %f\n", MPI::Wtime() - ag);
+      begin, end, comp, &bucket_size, mpi_dtype, numprocs, myid, comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: GET BUCKETS time %f\n", MPI::Wtime() - ag);
 
   // printf("proc %d bucket_size %d\n", myid, bucket_size);
   // printf("Proc %d: bucket holds %d to %d\n", myid, bucket_elems[0],
   // bucket_elems[bucket_size-1]);
   ag = MPI::Wtime();
   redistribute(begin, end, sorted_bucket, bucket_size, mpi_dtype, numprocs,
-               myid);
-  MPI_Barrier(MPI_COMM_WORLD);
-  if(!myid) printf("SAMPLESORT: REDISTRIBUTE time %f\n", MPI::Wtime() - ag);
+               myid, comm);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: REDISTRIBUTE time %f\n", MPI::Wtime() - ag);
 
   // printf("Proc %d: redistr holds %d to %d\n", myid, *begin, *(end-1));
 
