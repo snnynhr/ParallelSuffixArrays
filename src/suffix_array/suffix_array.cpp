@@ -102,11 +102,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  Component 1:
    *  S = <(T[i,i+2], i) : i \in [0,n), i mod 3 \not= 0>
    */
-  double elapsed = 0;
-  if (!myid) {
-    fprintf(stdout, "Building component 1\n");
-    elapsed = MPI::Wtime();
-  }
   // We need to calculate the number of positions which are not 0 mod 3.
   const uint32_t sm = (3 - (offset % 3)) % 3;
   const uint32_t dc3_elem_array_size =
@@ -138,12 +133,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  Component 2:
    *  Sort S by first component.
    */
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 1: %f\n\n", MPI::Wtime() - elapsed);
-    elapsed = MPI::Wtime();
-    fprintf(stdout, "Building component 2\n");
-  }
   ssort::samplesort(S, S + dc3_elem_array_size, compare_dc3_elem, mpi_dc3_elem,
                     numprocs, myid);
 
@@ -151,13 +140,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  Component 3:
    *  P := name (S)
    */
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 2: %f\n\n", MPI::Wtime() - elapsed);
-    elapsed = MPI::Wtime();
-    fprintf(stdout, "Building component 3\n");
-  }
-
   // First we calculate a boolean if the curr string is not equal to previous.
   // To check if not equal to previous, first element of this process needs the
   // last element of previous process. So we use SEND / RECV.
@@ -192,8 +174,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
                           is_diff_from_adj[i - 1];
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);  // test only
-
   // We want to produce a scan over the is_diff array across all processors.
   // The sum of each individual array is is_diff[_size - 1]. We do an
   // exclusive scan on this to propagate the partial sums.
@@ -214,13 +194,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  SA^{12} = pDC3(<c : (c,i) in P>)
    *  P := <(j+1, mapBack(SA^{12}[j], n/3)) : j < 2n/3>
    */
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 3: %f\n\n", MPI::Wtime() - elapsed);
-    elapsed = MPI::Wtime();
-    fprintf(stdout, "Building component 4\n");
-  }
-
   uint32_t total = 0;
   uint32_t is_unique = 0;
   if (myid == numprocs - 1) {
@@ -264,12 +237,9 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     }
 
     int dc3_elem_array_size_int = dc3_elem_array_size;
-    double gt = MPI :: Wtime();
     // send sizes of local arrays in preparation for sending the local arrays
     MPI_Gather(&dc3_elem_array_size_int, 1, MPI_INT, &sizes[0], 1, MPI_INT,
                numprocs - 1, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Gather time %f\n", MPI::Wtime() - gt);
 
     if (myid == numprocs - 1) {
       displ[0] = 0;
@@ -281,12 +251,8 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     }
 
     // send local arrays to root
-    double ag = MPI :: Wtime();
-
     MPI_Gatherv(names, dc3_elem_array_size_int, MPI_UNSIGNED, all_names, sizes,
                 displ, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Allgather time %f\n", MPI::Wtime() - ag);
 
     if (myid == numprocs - 1) {
       all_SA = new int[total_size];
@@ -300,23 +266,15 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     int* local_SA = new int[dc3_elem_array_size];
 
     // send result of recursive call back to nodes
-    ag = MPI :: Wtime();
-
     MPI_Scatterv(all_SA, sizes, displ, MPI_INT, local_SA,
                  dc3_elem_array_size_int, MPI_INT, numprocs - 1,
                  MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Scatterv time %f\n", MPI::Wtime() - ag);
 
     int global_idx;
 
     // tell each processor what their index their array starts on globally
-    ag = MPI :: Wtime();
-
     MPI_Scatter(displ, 1, MPI_INT, &global_idx, 1, MPI_INT, numprocs - 1,
                 MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Scatter time %f\n", MPI::Wtime() - ag);
 
     for (int i = 0; i < dc3_elem_array_size_int; i++) {
       P[i].word = global_idx + i + 1;
@@ -341,13 +299,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  S_2 := <(c, T[i], T[i+1], c'', i) : i mod 3 = 2), (c,i), (c'', i+2) in
    P>
    */
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 4: %f\n\n", MPI::Wtime() - elapsed);
-    elapsed = MPI::Wtime();
-    fprintf(stdout, "Building component 5\n");
-  }
-
   // We need the first two elements of the next process.
   if (myid != 0) {
     MPI_Send(&P[0], 2, mpi_dc3_elem, myid - 1, 0, MPI_COMM_WORLD);
@@ -453,13 +404,6 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  Component 6:
    *  Sort S_0 union S_1 union S_2 using compare operator in paper.
    */
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 5: %f\n\n", MPI::Wtime() - elapsed);
-    elapsed = MPI::Wtime();
-    fprintf(stdout, "Building component 6\n");
-  }
-
   ssort::samplesort(SS, SS + size, compare_tuple_elem, mpi_dc3_tuple_elem,
                     numprocs, myid);
 
@@ -467,20 +411,8 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  Component 7:
    *  Return last component of (s : s in S).
    */
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 6: %f\n\n", MPI::Wtime() - elapsed);
-    elapsed = MPI::Wtime();
-    fprintf(stdout, "Building component 7\n");
-  }
-
   for (uint32_t i = 0; i < size; i++) {
     suffix_array[i] = SS[i].index;
-  }
-
-  MPI_Barrier(MPI_COMM_WORLD);
-  if (!myid) {
-    fprintf(stdout, "Runtime of component 7: %f\n\n", MPI::Wtime() - elapsed);
   }
 
   delete[] P;

@@ -71,11 +71,8 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
   value_type *all_samples = NULL;
   if (myid == 0) all_samples = new value_type[numprocs * sample_size];
 
-  double ag = MPI::Wtime();
   MPI_Gather(sample, sample_size, mpi_dtype, all_samples, sample_size,
              mpi_dtype, 0, comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: Gather time %f\n", MPI::Wtime() - ag);
 
   // get and broadcast p-1 global splitters, placing them in sample array
   if (myid == 0) {
@@ -87,10 +84,7 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
       sample[i] = all_samples[as_pos - 1];
     }
   }
-  ag = MPI::Wtime();
   MPI_Bcast(sample, sample_size, mpi_dtype, 0, comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: Bcast time %f\n", MPI::Wtime() - ag);
 
   delete[] all_samples;
 
@@ -145,11 +139,8 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
   // processor i will receive all elements in bucket i across all processors,
   // so send bucket sizes in order to know how much space to allocate
   int *recv_split_counts = new int[numprocs];
-  double aa = MPI::Wtime();
   MPI_Alltoall(send_split_counts, 1, MPI_INT, recv_split_counts, 1, MPI_INT,
                comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: All to all time %f\n", MPI::Wtime() - aa);
 
   int *send_displacements = exclusive_sum(send_split_counts, numprocs);
   int *recv_displacements = exclusive_sum(recv_split_counts, numprocs);
@@ -159,12 +150,9 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
   value_type *bucket_elems = new value_type[*bucket_size_ptr];
 
   // send bucket elements
-  double ag = MPI::Wtime();
   MPI_Alltoallv(begin, send_split_counts, send_displacements, mpi_dtype,
                 bucket_elems, recv_split_counts, recv_displacements, mpi_dtype,
                 comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: All to allv time %f\n", MPI::Wtime() - ag);
 
   // sort bucket elements
   std::sort(bucket_elems, bucket_elems + *bucket_size_ptr, comp);
@@ -192,10 +180,7 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
 
   int *all_sizes = new int[2 * numprocs];
 
-  double ag = MPI::Wtime();
   MPI_Allgather(local_sizes, 2, MPI_INT, all_sizes, 2, MPI_INT, comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: Allgather time %f\n", MPI::Wtime() - ag);
 
   int *send_counts = new int[numprocs];
   int *recv_counts = new int[numprocs];
@@ -228,11 +213,8 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
   int *send_displacements = exclusive_sum(send_counts, numprocs);
   int *recv_displacements = exclusive_sum(recv_counts, numprocs);
 
-  double aa = MPI::Wtime();
   MPI_Alltoallv(bucket_elems, send_counts, send_displacements, mpi_dtype, begin,
                 recv_counts, recv_displacements, mpi_dtype, comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: Alltoallv time %f\n", MPI::Wtime() - aa);
 
   delete[] all_sizes;
   delete[] send_counts;
@@ -247,29 +229,20 @@ template <typename _Iter, typename _Compare>
 void samplesort(_Iter begin, _Iter end, _Compare comp, MPI_Datatype mpi_dtype,
                 int numprocs, int myid, MPI_Comm comm) {
   // sort locally
-  double ag = MPI::Wtime();
   std::sort(begin, end, comp);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: LOCAL SORT time %f\n", MPI::Wtime() - ag);
 
   if (numprocs <= 1) return;
 
   typedef typename std::iterator_traits<_Iter>::value_type value_type;
-  ag = MPI::Wtime();
   int bucket_size;
   value_type *sorted_bucket = (value_type *)get_buckets(
       begin, end, comp, &bucket_size, mpi_dtype, numprocs, myid, comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: GET BUCKETS time %f\n", MPI::Wtime() - ag);
 
   // printf("proc %d bucket_size %d\n", myid, bucket_size);
   // printf("Proc %d: bucket holds %d to %d\n", myid, bucket_elems[0],
   // bucket_elems[bucket_size-1]);
-  ag = MPI::Wtime();
   redistribute(begin, end, sorted_bucket, bucket_size, mpi_dtype, numprocs,
                myid, comm);
-  MPI_Barrier(comm);
-  if (!myid) printf("SAMPLESORT: REDISTRIBUTE time %f\n", MPI::Wtime() - ag);
 
   // printf("Proc %d: redistr holds %d to %d\n", myid, *begin, *(end-1));
 

@@ -33,8 +33,6 @@ int main(int argc, char* argv[]) {
 
   if(!myid) fprintf(stdout, "Starting suffix array construction\n");
 
-  MPI_Barrier(MPI_COMM_WORLD);  // test only
-
   // Decompose file
   uint64_t size = 0;
   uint64_t file_size = 0;
@@ -51,8 +49,6 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
   //fprintf(stdout, "%d: %.*s\n", myid, static_cast<uint32_t>(size), data);
-
-  MPI_Barrier(MPI_COMM_WORLD);  // test only
 
   /*
    *  Begin construction!
