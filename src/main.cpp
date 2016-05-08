@@ -60,9 +60,9 @@ int main(int argc, char* argv[]) {
 
   if(!myid) fprintf(stdout,"Begin suffix array construction\n");
 
-  uint64_t* suffixarray = NULL;
+  uint32_t* suffixarray = NULL;
   try {
-    suffixarray = new uint64_t[size]();
+    suffixarray = new uint32_t[size]();
   } catch (std::bad_alloc& ba) {
     fprintf(stderr, "Bad alloc \n");
     MPI_Finalize();

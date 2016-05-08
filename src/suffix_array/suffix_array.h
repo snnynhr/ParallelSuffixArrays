@@ -8,9 +8,9 @@
 class SuffixArray {
  public:
   SuffixArray();
-  int32_t build(const char* data, uint32_t size, uint64_t file_size,
-                uint64_t offset, int numprocs, int myid,
-                uint64_t* suffix_array);
+  int32_t build(const char* data, uint32_t size, uint32_t file_size,
+                uint32_t offset, int numprocs, int myid,
+                uint32_t* suffix_array);
 
  private:
   MPI_Datatype mpi_dc3_elem;
