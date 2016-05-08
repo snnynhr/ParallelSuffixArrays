@@ -19,19 +19,12 @@
 // remove asserts + assert.h
 
 // NOTES:
-// Here I make the assumption that the sizes of the input arrays summed across
-// all processors can be held in an int.
-// The reason I do this is because MPI calls require counts and displacements
-// to be ints, e.g. see MPI_Alltoallv.
-// *** This is a big problem if we want to sort big arrays! ***
-// There are two possible fixes:
-//   (1) Send the arrays with a larger MPI_Datatype
-//   (2) Send the arrays in chunks.
-// (See
-// http://stackoverflow.com/questions/23201522/how-can-i-pass-long-and-or-unsigned-integers-to-mpi-arguments?rq=1
-// )
-// In either case, we'll probably want to write wrappers for the MPI functions
-// that can handle passing around large arrays. TODO
+// Here I make the assumption that the sizes of the input arrays and the bucket
+// arrays can be held in a signed int. The reason I do this is because MPI
+// calls require counts and displacements to be ints, e.g. see MPI_Alltoallv.
+// This unfortunately means that I make the assumption that we don't get some
+// bad-case input where the bucket sizes are skewed and some processor gets a
+// lot of data at once.
 
 namespace ssort {
 
@@ -43,7 +36,7 @@ int *exclusive_sum(int *arr, size_t n) {
 }
 
 // Return the length of the intersection of [l1, r1) and [l2, r2)
-int interval_overlap(int l1, int r1, int l2, int r2) {
+size_t interval_overlap(size_t l1, size_t r1, size_t l2, size_t r2) {
   if (l2 < l1) {
     std::swap(l1, l2);
     std::swap(r1, r2);
@@ -267,25 +260,26 @@ void redistribute(_Iter begin, _Iter end, void *bucket, int bucket_size,
   int *send_counts = new int[numprocs];
   int *recv_counts = new int[numprocs];
 
-  int global_my_orig_begin = 0;
-  int global_my_bucket_begin = 0;
+  size_t global_my_orig_begin = 0;
+  size_t global_my_bucket_begin = 0;
   for (int i = 0; i < myid; ++i) {
     global_my_orig_begin += all_sizes[2 * i];
     global_my_bucket_begin += all_sizes[2 * i + 1];
   }
-  int global_my_orig_end = global_my_orig_begin + all_sizes[2 * myid];
-  int global_my_bucket_end = global_my_bucket_begin + all_sizes[2 * myid + 1];
+  size_t global_my_orig_end = global_my_orig_begin + all_sizes[2 * myid];
+  size_t global_my_bucket_end = 
+    global_my_bucket_begin + all_sizes[2 * myid + 1];
 
-  int curr_orig_begin = 0;
-  int curr_bucket_begin = 0;
+  size_t curr_orig_begin = 0;
+  size_t curr_bucket_begin = 0;
   for (int i = 0; i < numprocs; ++i) {
-    int curr_orig_end = curr_orig_begin + all_sizes[2 * i];
+    size_t curr_orig_end = curr_orig_begin + all_sizes[2 * i];
     send_counts[i] =
         interval_overlap(curr_orig_begin, curr_orig_end, global_my_bucket_begin,
                          global_my_bucket_end);
     curr_orig_begin = curr_orig_end;
 
-    int curr_bucket_end = curr_bucket_begin + all_sizes[2 * i + 1];
+    size_t curr_bucket_end = curr_bucket_begin + all_sizes[2 * i + 1];
     recv_counts[i] = interval_overlap(curr_bucket_begin, curr_bucket_end,
                                       global_my_orig_begin, global_my_orig_end);
     curr_bucket_begin = curr_bucket_end;
