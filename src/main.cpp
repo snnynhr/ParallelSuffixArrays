@@ -85,11 +85,13 @@ int main(int argc, char* argv[]) {
   if(!myid)
   fprintf(stdout, "Building time: %f\n", MPI::Wtime() - construction_time);
 
-  // printf("Result: %d: ", myid);
-  // for(uint64_t i = 0; i < size; i++) {
-  //   printf("%lu ", suffixarray[i]);
-  // }
-  // printf("\n");
+  /*
+  printf("Result: %d: ", myid);
+  for(uint64_t i = 0; i < size; i++) {
+    printf("%u ", suffixarray[i]);
+  }
+  printf("\n");
+  */
 
   // Done
   free(data);

@@ -23,14 +23,21 @@ bool compare_sortedP_elem(const dc3_elem& lhs, const dc3_elem& rhs) {
 }
 
 bool compare_P_elem(const dc3_elem& lhs, const dc3_elem& rhs) {
-  if ((lhs.index % 3) < (rhs.index % 3)) {
-    return 1;
-  } else if (lhs.index % 3 == rhs.index % 3) {
-    if (lhs.index / 3 < rhs.index / 3) {
-      return 1;
-    }
-  }
-  return 0;
+  return (lhs.index % 3 < rhs.index % 3) 
+      || ((lhs.index % 3 == rhs.index % 3) && (lhs.index / 3 < rhs.index / 3));
+}
+
+// returns (a1, b1) < (a2, b2)
+inline bool tuple2_comp(uint32_t a1, uint32_t b1, uint32_t a2, uint32_t b2) {
+  return (a1 < a2) 
+      || ((a1 == a2) && (b1 < b2));
+}
+
+inline bool tuple3_comp(uint32_t a1, uint32_t b1, uint32_t c1,
+                       uint32_t a2, uint32_t b2, uint32_t c2) {
+  return (a1 < a2) 
+      || ((a1 == a2) && (b1 < b2))
+      || ((a1 == a2) && (b1 == b2) && (c1 < c2));
 }
 
 bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
@@ -41,29 +48,18 @@ bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
   // If both are not 0:
   if (l_id != 0 && r_id != 0) {
     return (lhs.name1 < rhs.name1);
-  } else if (l_id == 1 || r_id == 1) {
-    // At least 1 is 1:
-    if (l_id == 1) {
-      std::tuple<uint32_t, uint32_t> ll(0xFF & (lhs.word >> 8), lhs.name2);
-      std::tuple<uint32_t, uint32_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
-      return ll < rr;
-    } else {
-      std::tuple<uint32_t, uint32_t> ll(0xFF & (lhs.word >> 8), lhs.name1);
-      std::tuple<uint32_t, uint32_t> rr(0xFF & (rhs.word >> 8), rhs.name2);
-      return ll < rr;
-    }
+  } else if (l_id == 1) { // at least 1 is 1:
+      return tuple2_comp(0xFF & (lhs.word >> 8), lhs.name2, 0xFF & (rhs.word >> 8), rhs.name1);
+  } else if (r_id == 1) { // at least 1 is 1:
+      return tuple2_comp(0xFF & (lhs.word >> 8), lhs.name1, 0xFF & (rhs.word >> 8), rhs.name2);
   } else if (l_id == 2 || r_id == 2) {
     // At least 1 is 2:
-    std::tuple<uint32_t, uint32_t, uint32_t> ll(0xFF & (lhs.word >> 8),
-                                                0xFF & (lhs.word), lhs.name2);
-    std::tuple<uint32_t, uint32_t, uint32_t> rr(0xFF & (rhs.word >> 8),
-                                                0xFF & (rhs.word), rhs.name2);
-    return ll < rr;
+    return tuple3_comp (0xFF & (lhs.word >> 8), 0xFF & (lhs.word), lhs.name2,
+                        0xFF & (rhs.word >> 8), 0xFF & (rhs.word), rhs.name2);
   } else {
-    // Only one is 0:
-    std::tuple<uint32_t, uint32_t> ll(0xFF & (lhs.word >> 8), lhs.name1);
-    std::tuple<uint32_t, uint32_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
-    return ll < rr;
+    // Both are 0:
+    return tuple2_comp(0xFF & (lhs.word >> 8), lhs.name1,
+                       0xFF & (rhs.word >> 8), rhs.name1);
   }
 }
 
