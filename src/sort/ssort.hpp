@@ -5,16 +5,12 @@
 #include <numeric>
 #include <mpi.h>
 
-#include "assert.h"
-
 // TODO for implementation:
 //
 // handle case where some local arrays are of size 0.
 //   need to change: local splitting
 //                   gathering the local splitters
 //                   iterating through sorted allsamples
-//
-// remove asserts + assert.h
 
 // NOTES:
 // Here I make the assumption that the sizes of the input arrays and the bucket
@@ -67,7 +63,6 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
   const int leftover = size % (sample_size + 1);
   for (int i = 0; i < sample_size; ++i) {
     s_pos += jump + (i < leftover);
-    assert(begin <= s_pos - 1 && s_pos - 1 < end);
     sample[i] = *(s_pos - 1);
   }
 
@@ -88,16 +83,8 @@ void *get_splitters(_Iter begin, _Iter end, _Compare comp,
     int as_pos = 0;
     for (int i = 0; i < sample_size; ++i) {
       as_pos += sample_size;
-      assert(0 <= as_pos - 1 && as_pos - 1 < numprocs * sample_size);
       sample[i] = all_samples[as_pos - 1];
     }
-
-    /*
-    printf("Splitters:");
-    for (int i = 0; i < sample_size; ++i)
-      printf(" %d: %d,", i, sample[i]);
-    printf("\n");
-    */
   }
   ag = MPI::Wtime();
   MPI_Bcast(sample, sample_size, mpi_dtype, 0, MPI_COMM_WORLD);
