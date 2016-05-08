@@ -53,7 +53,7 @@
                             <a class="page-scroll" href="#links">Links</a>
                         </li>
                         <li>
-                            <a class="page-scroll" href="#description">Description</a>
+                            <a class="page-scroll" href="#final">Final</a>
                         </li>
                         <li>
                             <a class="page-scroll" href="#checkpoint">Checkpoint</a>
@@ -204,7 +204,34 @@
                 </div>
             </div>
         </section>
-        <section id="description">
+        <section id="final">
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading"> <b> Parallelized Suffix Array Construction: Final Writeup </b></h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Summary</h3>
+                    <p>
+                        We implemented an optimized suffix array construction on large data sets by distributing the data across several nodes and communicating with MPI.
+                    </p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Background</h3>
+                    <p>
+                        The goal is to take as input a text file or a character array and to output an
+                        array SA where SA[i] is the starting index of the i-th suffix sorted in
+                        descending lexicographical order.
+                        TODO.
+                    </p>
+                </div>
+            </div>
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12 text-center">
@@ -215,20 +242,7 @@
             </div>
             <div class="container">
                 <div class="row">
-                    <h3> Summary</h3>
-                    <p>
-                        We implemented suffix array construction on large data sets by distributing the data across several nodes and communicating with MPI.
-                    </p>
-                    <h3> Results </h3>
-                    <p>
-                        Upcoming.
-                    </p>
-                    <h3> Background </h3>
-                    <p>
-                        The goal is to take as input a text file or a character array and to output an
-                        array SA where SA[i] is the starting index of the i-th suffix sorted in
-                        descending lexicographical order.
-                    </p>
+                    <h3 class="primary"> <b> pDC3 </b> (Parallel Difference Cover - 3) </h3>
                     <p>
                         The DC3 algorithm for constructing suffix arrays is as follows:
                         <ul>
@@ -251,6 +265,83 @@
                     <p>
                         For constructing the suffix array on small inputs, we use a sequential implementation by Yuta Mori called "sais."
                     </p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> <b> pCSS </b> (Parallel Cascasding Suffix Sort) </h3>
+                    <p>
+                    </p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Results</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Measuring Results </h3>
+                    <p>
+                        We measured performance by find the wall-clock time to construct the suffix array. These times do not include the time it takes convert the input textfile into a char array.
+                    </p>
+                </div>
+                <div class="row">
+                    <h3> Experimental Setup </h3>
+                    <p>
+                        For our inputs, we generated files of random mixed-case English letters. We did this for sizes 1MB, 5MB, 10MB, 20MB, 50MB, 100MB, 250MB, 500MB, 750MB, and 1GB.
+                    </p>
+                </div>
+                <div class="row">
+                    <h3> Data </h3>
+                    <p>
+                        [graphs comparing overall time]
+                        We compared the following implementations:
+                        - A highly optimized sequential implementation "sais" by Yuta Mori
+                        - Our implementation of the DC3 algorithm distributed across 4 nodes with 12 processes per node
+                        - ??????
+                        In the graphs above, we see ....
+                        [ e.g. how well does the implementation scale as nodes increase? as problem size increases? when do we start beating the sequential implementation? ]
+                        [ graphs breaking down execution time ]
+                    </p>
+                </div>
+                <div class="row">
+                    <h3> Performance Analysis </h3>
+                </div>
+                <div class="row">
+                    <h3> Machine Choice </h3>
+
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> References</h3>
+                    <p>
+                        An excellent source which provides background and a complete taxonomy of the types of suffix array construction algorithms (SACAs) and the varying implementations over the past 30 years is the following paper by Puglisi et. al: <a href="http://www.cas.mcmaster.ca/~bill/best/algorithms/07Taxonomy.pdf"> Taxonomy of Suffix Array Construction</a>.
+                    </p>
+                    <p>
+                        The papers were useful is learning about suffix array construction on the CPU:
+                        <ul>
+                            <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
+                            <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
+                            <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
+                            <li> <a href="https://pdfs.semanticscholar.org/6eeb/4c131cb4039821208e7cb756395810aa9a0a.pdf"> Parallel Lightweight Wavelet Tree, Suffix Array and FM-Index Construction </a></li>
+                        </ul>
+                        These were the papers were referenced for distributed suffix array construction:
+                        <ul>
+                            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction. </a> </li>
+                            <li> <a href="http://delivery.acm.org/10.1145/2810000/2807609/a16-flick.pdf?ip=128.237.73.121&id=2807609&acc=ACTIVE%20SERVICE&key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&CFID=747335659&CFTOKEN=47718763&__acm__=1460868043_d6df6e9218c458c4b26bbf6fd43656f0"> Parallel Distributed Memory Construction of Suffix and Longest Common Prefix Arrays </a></li>
+                        </ul>
+                    </p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Work Distribution</h3>
+                    <p> Equal work was done by the both members of the group. </p>
                 </div>
             </div>
         </section>
