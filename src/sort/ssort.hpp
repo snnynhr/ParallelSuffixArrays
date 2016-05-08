@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <numeric>
 #include <mpi.h>
+#include <parallel/algorithm>
 
 // TODO for implementation:
 //
@@ -167,7 +168,10 @@ void *get_buckets(_Iter begin, _Iter end, _Compare comp, int *bucket_size_ptr,
   if (!myid) printf("SAMPLESORT: All to allv time %f\n", MPI::Wtime() - ag);
 
   // sort bucket elements
+  ag = MPI::Wtime();
   std::sort(bucket_elems, bucket_elems + *bucket_size_ptr, comp);
+  MPI_Barrier(comm);
+  if (!myid) printf("SAMPLESORT: Bucket sort time %f\n", MPI::Wtime() - ag);
 
   delete[] splitters;
   delete[] send_split_counts;

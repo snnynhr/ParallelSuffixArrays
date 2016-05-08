@@ -42,7 +42,7 @@ SuffixArray::SuffixArray() {
   MPI_Type_commit(&mpi_css_elem);
 };
 
-int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
+int32_t SuffixArray::build(const char* data, uint32_t size,
                            uint64_t offset, int numprocs, int myid,
                            uint64_t* suffix_array, MPI_Comm comm) {
   MPI_Comm_size(comm, &numprocs);

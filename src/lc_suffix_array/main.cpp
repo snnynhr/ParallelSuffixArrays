@@ -29,22 +29,10 @@ int main(int argc, char* argv[]) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Get_processor_name(processor_name, &namelen);
 
-  MPI_Comm MPI_SPLIT_COMM;
-
-  if (rank % 2 == 0) {
-    MPI_Comm_split(MPI_COMM_WORLD, 0, numprocs, &MPI_SPLIT_COMM);
-  } else {
-    MPI_Comm_split(MPI_COMM_WORLD, MPI_UNDEFINED, numprocs, &MPI_SPLIT_COMM);
-  }
 
   uint64_t file_size = 0;
   char* data = NULL;
-  if (rank % 2 == 1) {
-    MPI_Finalize();
-    exit(0);
-  }
-  MPI_Comm_size(MPI_SPLIT_COMM, &numprocs);
-  MPI_Comm_rank(MPI_SPLIT_COMM, &rank);
+
   // fprintf(stdout, "Process %d on %s\n", rank, processor_name);
 
   if (!rank) fprintf(stdout, "Reading file from disk onto node.\n");
@@ -80,7 +68,7 @@ int main(int argc, char* argv[]) {
 
   if (!rank) fprintf(stdout, "Starting suffix array construction\n");
 
-  MPI_Barrier(MPI_SPLIT_COMM);  // test only
+  MPI_Barrier(MPI_COMM_WORLD);  // test only
 
   // Decompose file
   uint64_t offset = 0;
@@ -93,7 +81,7 @@ int main(int argc, char* argv[]) {
     offset = mod * (size + 1) + (rank - mod) * size;
   }
   // fprintf(stdout, "Node %d has size %lu offset %lu\n", rank, size, offset);
-  MPI_Barrier(MPI_SPLIT_COMM);  // test only
+  MPI_Barrier(MPI_COMM_WORLD);  // test only
 
   /*
    *  Begin construction!
@@ -110,19 +98,19 @@ int main(int argc, char* argv[]) {
     exit(-1);
   }
 
-  MPI_Barrier(MPI_SPLIT_COMM);  // test only
+  MPI_Barrier(MPI_COMM_WORLD);  // test only
   double construction_time = MPI::Wtime();
 
   SuffixArray st;
-  if (st.build(data, size, file_size, offset, numprocs, rank, suffixarray,
-               MPI_SPLIT_COMM) < 0) {
+  if (st.build(data, size, offset, numprocs, rank, suffixarray,
+               MPI_COMM_WORLD) < 0) {
     fprintf(stderr, "Error in process %d, terminating.\n", rank);
     MPI_Finalize();
     exit(-1);
   }
 
   // fprintf(stdout, "Done building at rank %d\n", rank);
-  MPI_Barrier(MPI_SPLIT_COMM);
+  MPI_Barrier(MPI_COMM_WORLD);
   if (!rank)
     fprintf(stdout, "Building time: %f\n", MPI::Wtime() - construction_time);
 
