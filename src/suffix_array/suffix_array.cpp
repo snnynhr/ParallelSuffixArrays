@@ -208,7 +208,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
   }
 
   /*
-   *  @TODO: Component 4:
+   *  Component 4:
    *  If names are not unique:
    *  Permute (r,i) in P such that they are sorted by (i mod 3, i div 3)
    *  SA^{12} = pDC3(<c : (c,i) in P>)
@@ -229,16 +229,9 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     // number of total elements not 0 mod 3. We calculate this using the
     // filesize.
     total = names[dc3_elem_array_size - 1];
-    if (total == ((file_size - 1) / 3) * 2 + ((file_size - 1) % 3)) {
-      is_unique = 1;
-      MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
-    } else {
-      is_unique = 0;
-      MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
-    }
-  } else {
-    MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
+    is_unique = (total == ((file_size - 1) / 3) * 2 + ((file_size - 1) % 3));
   }
+  MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
 
   // @TODO: We can probably reuse S.
   // Generate P array. This stores [name, index].
@@ -256,16 +249,15 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
 
     // Use SAIS for recursive case. TODO expand to distributed version
     //
-    int* names_int = new int[dc3_elem_array_size];
 
     for (uint32_t i = 0; i < dc3_elem_array_size; i++)
-      names_int[i] = P[i].word;
+      names[i] = P[i].word;
 
     int* sizes = NULL;
     int* displ = NULL;
     int* all_names = NULL;
     int* all_SA = NULL;
-    int total_size;
+    uint32_t total_size;
     if (myid == numprocs - 1) {
       sizes = new int[numprocs];
       displ = new int[numprocs];
@@ -291,7 +283,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     // send local arrays to root
     double ag = MPI :: Wtime();
 
-    MPI_Gatherv(names_int, dc3_elem_array_size_int, MPI_INT, all_names, sizes,
+    MPI_Gatherv(names, dc3_elem_array_size_int, MPI_UNSIGNED, all_names, sizes,
                 displ, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     if (!myid) printf("Allgather time %f\n", MPI::Wtime() - ag);
@@ -490,5 +482,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
   if (!myid) {
     fprintf(stdout, "Runtime of component 7: %f\n\n", MPI::Wtime() - elapsed);
   }
+
+  delete[] P;
+  delete[] S;
+  delete[] SS;
+  delete[] is_diff_from_adj;
+  delete[] next2;
+
   return 0;
 }
