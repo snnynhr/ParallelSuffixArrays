@@ -60,9 +60,9 @@ int main(int argc, char* argv[]) {
 
   if(!myid) fprintf(stdout,"Begin suffix array construction\n");
 
-  uint64_t* suffixarray = NULL;
+  uint32_t* suffixarray = NULL;
   try {
-    suffixarray = new uint64_t[size]();
+    suffixarray = new uint32_t[size]();
   } catch (std::bad_alloc& ba) {
     fprintf(stderr, "Bad alloc \n");
     MPI_Finalize();
@@ -85,11 +85,13 @@ int main(int argc, char* argv[]) {
   if(!myid)
   fprintf(stdout, "Building time: %f\n", MPI::Wtime() - construction_time);
 
-  // printf("Result: %d: ", myid);
-  // for(uint64_t i = 0; i < size; i++) {
-  //   printf("%lu ", suffixarray[i]);
-  // }
-  // printf("\n");
+  /*
+  printf("Result: %d: ", myid);
+  for(uint64_t i = 0; i < size; i++) {
+    printf("%u ", suffixarray[i]);
+  }
+  printf("\n");
+  */
 
   // Done
   free(data);

@@ -3,15 +3,15 @@
 #include "../sais/sais.h"
 
 typedef struct dc3_elem {
-  uint64_t word;
-  uint64_t index;
+  uint32_t word;
+  uint32_t index;
 } dc3_elem;
 
 typedef struct dc3_tuple_elem {
-  uint64_t word;
-  uint64_t name1;
-  uint64_t name2;
-  uint64_t index;
+  uint32_t word;
+  uint32_t name1;
+  uint32_t name2;
+  uint32_t index;
 } dc3_tuple_elem;
 
 bool compare_dc3_elem(const dc3_elem& lhs, const dc3_elem& rhs) {
@@ -23,14 +23,21 @@ bool compare_sortedP_elem(const dc3_elem& lhs, const dc3_elem& rhs) {
 }
 
 bool compare_P_elem(const dc3_elem& lhs, const dc3_elem& rhs) {
-  if ((lhs.index % 3) < (rhs.index % 3)) {
-    return 1;
-  } else if (lhs.index % 3 == rhs.index % 3) {
-    if (lhs.index / 3 < rhs.index / 3) {
-      return 1;
-    }
-  }
-  return 0;
+  return (lhs.index % 3 < rhs.index % 3) 
+      || ((lhs.index % 3 == rhs.index % 3) && (lhs.index / 3 < rhs.index / 3));
+}
+
+// returns (a1, b1) < (a2, b2)
+inline bool tuple2_comp(uint32_t a1, uint32_t b1, uint32_t a2, uint32_t b2) {
+  return (a1 < a2) 
+      || ((a1 == a2) && (b1 < b2));
+}
+
+inline bool tuple3_comp(uint32_t a1, uint32_t b1, uint32_t c1,
+                       uint32_t a2, uint32_t b2, uint32_t c2) {
+  return (a1 < a2) 
+      || ((a1 == a2) && (b1 < b2))
+      || ((a1 == a2) && (b1 == b2) && (c1 < c2));
 }
 
 bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
@@ -38,32 +45,21 @@ bool compare_tuple_elem(const dc3_tuple_elem& lhs, const dc3_tuple_elem& rhs) {
   uint32_t l_id = lhs.word >> 16;
   uint32_t r_id = rhs.word >> 16;
 
-  // If both are 0:
+  // If both are not 0:
   if (l_id != 0 && r_id != 0) {
     return (lhs.name1 < rhs.name1);
-  } else if (l_id == 1 || r_id == 1) {
-    // At least 1 is 1:
-    if (l_id == 1) {
-      std::tuple<uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8), lhs.name2);
-      std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
-      return ll < rr;
-    } else {
-      std::tuple<uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8), lhs.name1);
-      std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name2);
-      return ll < rr;
-    }
+  } else if (l_id == 1) { // at least 1 is 1:
+      return tuple2_comp(0xFF & (lhs.word >> 8), lhs.name2, 0xFF & (rhs.word >> 8), rhs.name1);
+  } else if (r_id == 1) { // at least 1 is 1:
+      return tuple2_comp(0xFF & (lhs.word >> 8), lhs.name1, 0xFF & (rhs.word >> 8), rhs.name2);
   } else if (l_id == 2 || r_id == 2) {
     // At least 1 is 2:
-    std::tuple<uint32_t, uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8),
-                                                0xFF & (lhs.word), lhs.name2);
-    std::tuple<uint32_t, uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8),
-                                                0xFF & (rhs.word), rhs.name2);
-    return ll < rr;
+    return tuple3_comp (0xFF & (lhs.word >> 8), 0xFF & (lhs.word), lhs.name2,
+                        0xFF & (rhs.word >> 8), 0xFF & (rhs.word), rhs.name2);
   } else {
-    // Only one is 0:
-    std::tuple<uint32_t, uint64_t> ll(0xFF & (lhs.word >> 8), lhs.name1);
-    std::tuple<uint32_t, uint64_t> rr(0xFF & (rhs.word >> 8), rhs.name1);
-    return ll < rr;
+    // Both are 0:
+    return tuple2_comp(0xFF & (lhs.word >> 8), lhs.name1,
+                       0xFF & (rhs.word >> 8), rhs.name1);
   }
 }
 
@@ -77,7 +73,7 @@ SuffixArray::SuffixArray() {
   int lengths[2] = {1, 1};
   MPI_Aint offsets[2] = {offsetof(struct dc3_elem, word),
                          offsetof(struct dc3_elem, index)};
-  MPI_Datatype types[2] = {MPI_UNSIGNED_LONG_LONG, MPI_UNSIGNED_LONG_LONG};
+  MPI_Datatype types[2] = {MPI_UNSIGNED, MPI_UNSIGNED};
 
   MPI_Type_struct(c, lengths, offsets, types, &mpi_dc3_elem);
   MPI_Type_commit(&mpi_dc3_elem);
@@ -88,16 +84,16 @@ SuffixArray::SuffixArray() {
   MPI_Aint _offsets[4] = {
       offsetof(dc3_tuple_elem, word), offsetof(dc3_tuple_elem, name1),
       offsetof(dc3_tuple_elem, name2), offsetof(dc3_tuple_elem, index)};
-  MPI_Datatype _types[4] = {MPI_UNSIGNED_LONG_LONG, MPI_UNSIGNED_LONG_LONG,
-                            MPI_UNSIGNED_LONG_LONG, MPI_UNSIGNED_LONG_LONG};
+  MPI_Datatype _types[4] = {MPI_UNSIGNED, MPI_UNSIGNED,
+                            MPI_UNSIGNED, MPI_UNSIGNED};
 
   MPI_Type_struct(_c, _lengths, _offsets, _types, &mpi_dc3_tuple_elem);
   MPI_Type_commit(&mpi_dc3_tuple_elem);
 };
 
-int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
-                           uint64_t offset, int numprocs, int myid,
-                           uint64_t* suffix_array) {
+int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
+                           uint32_t offset, int numprocs, int myid,
+                           uint32_t* suffix_array) {
   // If N is small, switch to single thread.
 
   // If N is med, switch to single core.
@@ -113,7 +109,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   }
   // We need to calculate the number of positions which are not 0 mod 3.
   const uint32_t sm = (3 - (offset % 3)) % 3;
-  const uint64_t dc3_elem_array_size =
+  const uint32_t dc3_elem_array_size =
       sm + ((size - sm - 1) / 3) * 2 + ((size - sm - 1) % 3);
   dc3_elem* S = new dc3_elem[dc3_elem_array_size]();
   if (S == NULL) {
@@ -122,15 +118,15 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
   // Construct 'S' array
   // S stores: [data[pos, pos+2], index].
-  uint64_t pos = offset;
-  uint64_t count = 0;
+  uint32_t pos = offset;
+  uint32_t count = 0;
   while (count < dc3_elem_array_size) {
     if (pos % 3 != 0) {
       // Watch unsigned / signed
       // Read 3 chars
-      uint64_t word = static_cast<uint64_t>(data[pos - offset]);
-      word = (word << 8) + static_cast<uint64_t>(data[pos - offset + 1]);
-      word = (word << 8) + static_cast<uint64_t>(data[pos - offset + 2]);
+      uint32_t word = static_cast<uint32_t>(data[pos - offset]);
+      word = (word << 8) + static_cast<uint32_t>(data[pos - offset + 1]);
+      word = (word << 8) + static_cast<uint32_t>(data[pos - offset + 2]);
       S[count].word = word;
       S[count].index = pos;
       count++;
@@ -176,7 +172,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
              MPI_STATUS_IGNORE);
   }
 
-  uint64_t* is_diff_from_adj = new uint64_t[dc3_elem_array_size]();
+  uint32_t* is_diff_from_adj = new uint32_t[dc3_elem_array_size]();
   if (is_diff_from_adj == NULL) {
     return -1;
   }
@@ -191,8 +187,8 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   }
 
   // Calculate booleans for rest and simultaenously update prefix sum.
-  for (uint64_t i = 1; i < dc3_elem_array_size; i++) {
-    is_diff_from_adj[i] = static_cast<uint64_t>((S[i].word != S[i - 1].word)) +
+  for (uint32_t i = 1; i < dc3_elem_array_size; i++) {
+    is_diff_from_adj[i] = static_cast<uint32_t>((S[i].word != S[i - 1].word)) +
                           is_diff_from_adj[i - 1];
   }
 
@@ -201,18 +197,18 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   // We want to produce a scan over the is_diff array across all processors.
   // The sum of each individual array is is_diff[_size - 1]. We do an
   // exclusive scan on this to propagate the partial sums.
-  uint64_t prefix_sum = 0;
+  uint32_t prefix_sum = 0;
   MPI_Exscan(&is_diff_from_adj[dc3_elem_array_size - 1], &prefix_sum, 1,
-             MPI_UNSIGNED_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
+             MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
 
   // Update names with prefix sum.
-  uint64_t* names = is_diff_from_adj;
-  for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+  uint32_t* names = is_diff_from_adj;
+  for (uint32_t i = 0; i < dc3_elem_array_size; i++) {
     names[i] += prefix_sum;
   }
 
   /*
-   *  @TODO: Component 4:
+   *  Component 4:
    *  If names are not unique:
    *  Permute (r,i) in P such that they are sorted by (i mod 3, i div 3)
    *  SA^{12} = pDC3(<c : (c,i) in P>)
@@ -225,7 +221,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     fprintf(stdout, "Building component 4\n");
   }
 
-  uint64_t total = 0;
+  uint32_t total = 0;
   uint32_t is_unique = 0;
   if (myid == numprocs - 1) {
     // To check if all lexicographical prefixes are unique, we check that the
@@ -233,21 +229,14 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     // number of total elements not 0 mod 3. We calculate this using the
     // filesize.
     total = names[dc3_elem_array_size - 1];
-    if (total == ((file_size - 1) / 3) * 2 + ((file_size - 1) % 3)) {
-      is_unique = 1;
-      MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
-    } else {
-      is_unique = 0;
-      MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
-    }
-  } else {
-    MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
+    is_unique = (total == ((file_size - 1) / 3) * 2 + ((file_size - 1) % 3));
   }
+  MPI_Bcast(&is_unique, 1, MPI_UNSIGNED, numprocs - 1, MPI_COMM_WORLD);
 
   // @TODO: We can probably reuse S.
   // Generate P array. This stores [name, index].
   dc3_elem* P = new dc3_elem[dc3_elem_array_size];
-  for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+  for (uint32_t i = 0; i < dc3_elem_array_size; i++) {
     P[i].word = names[i];
     P[i].index = S[i].index;
   }
@@ -258,31 +247,17 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem, mpi_dc3_elem,
                       numprocs, myid);
 
-    /*
-     * Use SAIS for recursive case. TODO expand to distributed version
-     *
-     * Note: this converts names[], sizes, etc to ints. I do this because SAIS
-     * takes an int array and because MPI functions take int arrays. Also, I use
-     * MPI_Gatherv to move everything to one process, and this takes int arrays
-     * for sizes and displacements.
-     * This is OK because
-     *   1) If we call SAIS for the recursive case immediately, then the names
-     *      are triplets of chars. Then there are only up to 2^24 possible
-     *      distinct names, so this will fit in an int.
-     *   2) We probably don't want to call SAIS (sequential) if
-     *      we have over 2^31 distinct names or elements anyway
-     * If need be, though, we could try to modify SAIS to work on
-     * long long arrays.
-     */
-    int* names_int = new int[dc3_elem_array_size];
+    // Use SAIS for recursive case. TODO expand to distributed version
+    //
 
-    for (uint64_t i = 0; i < dc3_elem_array_size; i++) names_int[i] = P[i].word;
+    for (uint32_t i = 0; i < dc3_elem_array_size; i++)
+      names[i] = P[i].word;
 
     int* sizes = NULL;
     int* displ = NULL;
     int* all_names = NULL;
     int* all_SA = NULL;
-    int total_size;
+    uint32_t total_size;
     if (myid == numprocs - 1) {
       sizes = new int[numprocs];
       displ = new int[numprocs];
@@ -308,7 +283,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     // send local arrays to root
     double ag = MPI :: Wtime();
 
-    MPI_Gatherv(names_int, dc3_elem_array_size_int, MPI_INT, all_names, sizes,
+    MPI_Gatherv(names, dc3_elem_array_size_int, MPI_UNSIGNED, all_names, sizes,
                 displ, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     if (!myid) printf("Allgather time %f\n", MPI::Wtime() - ag);
@@ -393,28 +368,28 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     return -1;
   }
 
-  for (uint64_t i = 0; i < size; i++) {
+  for (uint32_t i = 0; i < size; i++) {
     // Calculate which of (S_0, S_1, S_2) this index is.
-    uint64_t array_num = (i + offset) % 3;
+    uint32_t array_num = (i + offset) % 3;
 
     // Word stores [arraynum][char i][char i + 1]
-    uint64_t word = array_num;
+    uint32_t word = array_num;
     word <<= 8;
-    word = word + static_cast<uint64_t>(data[i]);
+    word = word + static_cast<uint32_t>(data[i]);
     word <<= 8;
-    word = word + static_cast<uint64_t>(data[i + 1]);
+    word = word + static_cast<uint32_t>(data[i + 1]);
     SS[i].word = word;
 
     // Use offset to calculate global index.
     SS[i].index = i + offset;
   }
 
-  for (uint64_t i = 0; i < dc3_elem_array_size; i++) {
+  for (uint32_t i = 0; i < dc3_elem_array_size; i++) {
     // Get current index.
-    uint64_t curr_index = P[i].index;
+    uint32_t curr_index = P[i].index;
 
     // Get local offset of SS array.
-    uint64_t local_offset = curr_index - offset;
+    uint32_t local_offset = curr_index - offset;
 
     // x = 0 mod 3 depends on x + 1, x + 2
     // x = 1 mod 3 depends on x, x + 1
@@ -450,8 +425,8 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
 
   // Update the SS array using elements received from next process.
   if (myid != numprocs - 1) {
-    uint64_t next_index = next2[0].index;
-    uint64_t local_offset = next_index - offset;
+    uint32_t next_index = next2[0].index;
+    uint32_t local_offset = next_index - offset;
 
     // Index is x = 1 mod 3.
     if (next_index % 3 == 1) {
@@ -499,7 +474,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
     fprintf(stdout, "Building component 7\n");
   }
 
-  for (uint64_t i = 0; i < size; i++) {
+  for (uint32_t i = 0; i < size; i++) {
     suffix_array[i] = SS[i].index;
   }
 
@@ -507,5 +482,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint64_t file_size,
   if (!myid) {
     fprintf(stdout, "Runtime of component 7: %f\n\n", MPI::Wtime() - elapsed);
   }
+
+  delete[] P;
+  delete[] S;
+  delete[] SS;
+  delete[] is_diff_from_adj;
+  delete[] next2;
+
   return 0;
 }
