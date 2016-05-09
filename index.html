@@ -243,6 +243,8 @@
                         These are the most common <a href="#applications" class="page-scroll"> applications. </a>
                     </p>
                 </div>
+                <div class="container">
+                </div>
             </div>
             <div class="container">
                 <div class="row">
@@ -395,13 +397,19 @@
                 <div class="row">
                     <h3> Measuring Results </h3>
                     <p>
-                        We measured performance by find the wall-clock time to construct the suffix array. These times do not include the time it takes convert the input textfile into a char array.
+                        We measured performance by find the wall-clock time to construct the suffix array. These times do not include the time it takes convert the read input textfile into a char array and write the output suffix array. This also does not include the time for provisioning a cluster.
                     </p>
                 </div>
                 <div class="row">
                     <h3> Experimental Setup </h3>
                     <p>
-                        For our inputs, we generated files of random mixed-case English letters. We did this for sizes 1MB, 5MB, 10MB, 20MB, 50MB, 100MB, 250MB, 500MB, 750MB, and 1GB.
+                        For our inputs, we generated files of random mixed-case English letters. We did this for sizes 1MB, 5MB, 10MB, 20MB, 50MB, 100MB, 250MB, 500MB, 750MB, and 1GB. In addition, we use real world datasets from <a href="http://www.cs.cmu.edu/~pbbs/benchmarks/suffixArray.html">Guy Blelloch's PBBS</a> (Problem Based Benckmark Suite), namely etext, chr22, wikisamp, and trigrams.
+                    </p>
+                </div>
+                <div class="row">
+                    <h3> Baseline </h3>
+                    <p>
+                        To compare the performance our of parallel algorithms, we use an <a href="https://sites.google.com/site/yuta256/sais"> Yuta Mori's implementation </a> of the SA-IS algorithm by <a href="http://ieeexplore.ieee.org/xpl/articleDetails.jsp?arnumber=4976463"> Nong, Zhang & Chan (2009) </a>. This uses the method of induced sorting to construct suffix arrays. This implementation is commonly used as a baseline in other suffix array papers and it one of the fastest (if not the fastest) single-threaded implementation. It has both linear construction time and optimal memory usage.
                     </p>
                 </div>
                 <div class="row">
@@ -426,18 +434,27 @@
             </div>
             <div class="container">
                 <div class="row">
-                    <h3> References</h3>
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">References</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
                     <p>
                         An excellent source which provides background and a complete taxonomy of the types of suffix array construction algorithms (SACAs) and the varying implementations over the past 30 years is the following paper by Puglisi et. al: <a href="http://www.cas.mcmaster.ca/~bill/best/algorithms/07Taxonomy.pdf"> Taxonomy of Suffix Array Construction</a>.
                     </p>
                     <p>
-                        The papers were useful is learning about suffix array construction on the CPU:
+                        The papers were useful in learning about CPU based suffix array construction:
                         <ul>
                             <li> <a href="http://arxiv.org/abs/1302.5851">Parallel Suffix Array Construction by Accelerated Sampling </a></li>
                             <li> <a href="http://arxiv.org/pdf/1307.1417v1.pdf">An Elegant Algorithm for the Construction of Suffix Arrays </a></li>
                             <li> <a href="http://ieeexplore.ieee.org/xpls/abs_all.jsp?arnumber=7152610&tag=1"> Parallel DC3 Algorithm for Suffix Array Construction on Many-Core Accelerators </a></li>
                             <li> <a href="https://pdfs.semanticscholar.org/6eeb/4c131cb4039821208e7cb756395810aa9a0a.pdf"> Parallel Lightweight Wavelet Tree, Suffix Array and FM-Index Construction </a></li>
                         </ul>
+                    </p>
+                    <p>
                         These were the papers were referenced for distributed suffix array construction:
                         <ul>
                             <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction </a> </li>
