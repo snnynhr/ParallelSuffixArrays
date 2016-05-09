@@ -261,7 +261,7 @@
                         The sequential Difference Cover modulo 3 (DC3) algorithm for constructing suffix arrays is as follows:
                         <ul>
                             <li> For each index in the string, get the triple of three consecutive characters starting at that index. </li>
-                            <li> Sort these triples. If there are not unique, then, recursively solve for the suffix array of these triples of the corresponding <b>indices</b> <em>i</em> where <em>i mod 3</em> is not zero. This is a subproblem of size <em> 2/3</em> of the original input. </li>
+                            <li> Sort these triples. If there are not unique, then, recursively solve for the suffix array of these triples of the corresponding indices <em>i</em> where <em>i mod 3</em> is not zero. This is a subproblem of size <em> 2/3</em> of the original input. </li>
                             <li> Using the result of the recursive call to construct 3 arrays containing information about the positions of suffixes for indices which are <em> 0,1,2 mod 3</em>. </li>
                             <li> Combine and sort these three arrays using a carefully chosen comparator.</li>
                         </ul>
@@ -370,7 +370,7 @@
                         </ul>
                     </p>
                     <p>
-                        There wasn't much to optimize here. Most of the runtime
+                        There was not much to optimize here. Most of the runtime
                         comes from communication and two rounds of local
                         sorting. We could not find any way to avoid this
                         communication and sorting altogether. One of the rounds
@@ -497,16 +497,32 @@
                         <img src="./img/pdc3_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
                     </div>
                 </div>
+                The above graph shows the speedup of pDC3 running on four nodes
+                compared to SA-IS. Notice that pDC3 is actually slower than
+                SA-IS even though SA-IS is completely sequential. The relative
+                performance of pDC3 improves somewhat as the problem sizes become large.
                 <div class="row">
                     <div class="col-lg-12 text-center">
                         <img src="./img/pdc3_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
                     </div>
                 </div>
+                Here we break down the runtime of pDC3. The blue bars represent
+                the runtime taken up by MPI data transfers. The red bars
+                represent the runtime taken up by local calls to STL sort in
+                the implementation of samplesort. The grey bars make up
+                everything else, including the call SA-IS. If the call to SA-IS
+                were excluded from the grey bars, then we would see that the
+                MPI and sort calls take up a vast majority of the execution time.
                 <div class="row">
                     <div class="col-lg-12 text-center">
                         <img src="./img/pdc3_recur.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
                     </div>
                 </div>
+                In the above graph, the blue bar represents the proportion of
+                the run time taken up by the call to sequential SA-IS. The
+                timing includes the time to send all the data to one node. Note
+                that the recursive call actually does not take up a huge amount
+                of the run time until input sizes are very large.
                 <div class="row">
                     <h3> Performance Analysis </h3>
                 </div>
@@ -552,14 +568,14 @@
                         would not gain any performance from removing the SA-IS
                         call until the amount of time taken up by the recursive
                         call is significantly more than twice the amount of
-                        time taken up by everything else. In our experiments,
-                        this doesn't occur until the input size is on the order
-                        of a gigabyte.
+                        time taken up by everything else. In our experiments
+                        running on four nodes, this doesn't occur until the
+                        input size is on the order of a gigabyte.
                     </p>
                     <p>
-                        Considering that our implementation is already slower
-                        than SA-IS by itself, we decided that this was not a worthy
-                        avenue to pursue.
+                        Considering that our implementation is already much slower
+                        than SA-IS is, we decided that this was not a worthy
+                        avenue to pursue further.
                     </p>
                 </div>
                 <div class="row">
