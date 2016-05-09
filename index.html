@@ -75,7 +75,7 @@
                 <div class="header-content-inner">
                     <h1>pSFFX</h1>
                     <hr>
-                    <h2>Distributed Suffix Array Construction on Heterogeneous Architectures</h2>
+                    <h2>Distributed Suffix Array Construction</h2>
                     <hr>
                     <a href="#about" class="btn btn-primary btn-xl page-scroll">Find Out More</a>
                 </div>
@@ -108,7 +108,7 @@
                         <div class="service-box">
                             <i class="fa fa-4x fa-rocket wow bounceIn text-primary"></i>
                             <h3>Speed</h3>
-                            <p class="text-muted">Uses the DC3/Skew method to achieve a fast construction.</p>
+                            <p class="text-muted">Uses a novel method <a href="#pcss" class="page-scroll"> pCSS </a> developed by us to achieve a fast construction.</p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-6 text-center">
@@ -293,7 +293,7 @@
                     </p>
                 </div>
             </div>
-            <div class="container">
+            <div class="container" id="pcss">
                 <div class="row">
                     <div class="col-lg-12 text-center">
                         <h2 class="section-heading"><b> pCSS </b> (Parallel Cascading Suffix Sort)</h2>
@@ -309,9 +309,15 @@
                     </p>
                     <p>
                         <ul>
-                            <li> Create and array of 8-length contiguous substrings (samples) for each position in the string.</li>
-                            <li> Sort the array of samples.</li>
-                            <li> Now, all suffixes are sorted by the first 8-letters across the nodes. Find contiguous sequences of equal samples in each node, and sort them using a simple sequential sort. </li>
+                            <li> Create an array of 8-length contiguous substrings (samples) for each position in the string.
+                            </li>
+                            <li> Sort the array of samples using a distributed sort.
+                            </li>
+                            <li> Now, all suffixes are sorted by the first 8-letters across the nodes. Therefore suffixes with different samples are sorted correct, but suffixes with the same samples may not be sorted. These are arranged contiguously. Find contiguous sequences of suffixes with equal samples in each node, and sort them using a simple sequential sort.
+                            </li>
+                            <li>
+                                Find contiguous sequences of suffixes with equal samples across nodes, and sort them.
+                            </li>
                         </ul>
                     </p>
                     <h3>Parallelization </h3>
@@ -326,10 +332,10 @@
                     </p>
                     <h3> Optimizations and Performance</h3>
                     <p>
-                        We use 64-byte integers to store the samples. This allows for easy sorting, as sorting is simply an integer sort and not a string sort. This makes it possible to replace sample sort which a possibly faster integer specific sort. All in all, this algorithm requires only 1 call to a multi-node sort. After this, the communication is minimal. So this substantially improves upon the communication complexity of pDC3. In addition, the sort in pCSS makes lightweight integer comparisions, where the comparators in the different sorts of pDC3 require much heavier comparators.
+                        We use 64-byte integers to store the samples. This allows for easy sorting, as sorting is simply an integer sort and not a string sort. This makes it possible to replace sample sort which a possibly faster integer specific sort. All in all, this algorithm requires only 1 call to a multi-node sort. After this, the communication is minimal. So this substantially improves upon the communication complexity of pDC3. In addition, the sort in pCSS makes lightweight integer comparisons, where the comparators in the different sorts of pDC3 require much heavier comparators.
                     </p>
                     <p>
-                        We only spawn 1 MPI process per node. To achieve inter-node parallelism, we use OpenMP. This allows us to spawn multiple threads per node and parallelize the local sorting across the individual portion of the string on the node. In addition, this allows the samplesort to take advantage of a multithread per-core sort. In samplesort, each processing element needs to locally sort its chunk of elements. As the granularity of processing elements are now nodes, we do this using OpenMP threads to parallelize the sort. GCC has parallel extensions through OpenMP, so we simply have to compile with parallel flags.
+                        We only spawn 1 MPI process per node. To achieve inter-node parallelism, we use OpenMP. This allows us to spawn multiple threads per node and parallelize the local sorting across the individual portion of the string on the node. In addition, this allows the samplesort to take advantage of a multithreaded per-core sort. In samplesort, each processing element needs to locally sort its chunk of elements. As the granularity of processing elements are now nodes, we do this using OpenMP threads to parallelize the sort. GCC has parallel extensions through OpenMP, so we simply have to compile with parallel flags.
                     </p>
                     <p>
                         To find contiguous sequences of equal samples, we simply loop through the array. We utilize the multiple threads per node to split this into parallel searches. At the end, we have to look for contiguous sequences across threads, and then across nodes.
@@ -358,9 +364,12 @@
                         <ul>
                             <li>Sample <em>p</em>-1 "splitting" points from the input data.</li>
                             <ul>
-                                <li>Each processor samples some points from its local data.</li>
-                                <li>Gather all these local samples at one processor and pick the splitters based on these local samples. Sort these splitters.</li>
-                                <li>Broadcast the splitters to all the processors.</li>
+                                <li>Each processor samples some points from its local data.
+                                </li>
+                                <li>Gather all these local samples at one processor and pick the splitters based on these local samples. Sort these splitters.
+                                </li>
+                                <li>Broadcast the splitters to all the processors.
+                                </li>
                             </ul>
                             <li>Each processor partitions its local data into <em>p</em> buckets based on the splitters. Each bucket holds data that falls within an interval where the interval's endpoints are adjacent splitters.
                             The buckets have the property that each element in bucket <em>i</em> is "less than" any element bucket <em>j</em> (where "less than" is defined by the input comparison function) if <em>i</em> is less than <em>j</em>.</li>
@@ -610,13 +619,13 @@
                 <div class="row">
                     <h3> Analysis </h3>
                     <p>
-                        Due to the reduced communication costs and less expensive sort, pCSS performed significantly better than pDC3. It was able to achieve 3-4x speedup over SA-IS on 8 nodes for the large datasets. Even for real world inputs, our algorithm performed well, and hence our assumption about large number of equal and long strings held. We also observe increasing speedup and we increase the numbre of nodes, so the algorithm seems to scale well.
+                        Due to the reduced communication costs and less expensive sort, pCSS performed significantly better than pDC3. It was able to achieve 3-4x speedup over SA-IS on 8 nodes for the large datasets. Even for real world inputs, our algorithm performed well, and hence our assumption about large number of equal and long strings held. We also observe increasing speedup and we increase the number of nodes, so the algorithm seems to scale well.
                     </p>
                     <p>
                         As discussed in the last graph, a major component of the algorithm is still communication costs, accounting for 40% of the runtime. This is a similar percentage to pDC3. It is large percentage since we also improved the computation complexity significantly. Since our test interface, the Latedays cluster, uses ethernet connections between nodes, and not a high-speed interconnection network, we suspect that we can limit the impact of communication by using a better linked distributed system.
                     </p>
                     <p>
-                        We can split the algorithm into 4 main components. The first component is constructing the sample array. The second component is performing the distributed sort over all nodes over the sample array. The third component is perform local per-node sample-correction sorts. The last component is extracting the suffix array indices from the sorted sample array. By analyzing the runtime of each component, we found that that pCSS spends 97% of its runtime performing the samplesort. So the primary method of improving this algorithm would be improving the performance and communication complexity of the sort. As dicussed before, the distributed sort is over integers. Hence we do not need a comparison based sort and we can replace it with a possibly more efficient integer-specific sort of radix sort.
+                        We can split the algorithm into 4 main components. The first component is constructing the sample array. The second component is performing the distributed sort over all nodes over the sample array. The third component is perform local per-node sample-correction sorts. The last component is extracting the suffix array indices from the sorted sample array. By analyzing the runtime of each component, we found that that pCSS spends 97% of its runtime performing the samplesort. So the primary method of improving this algorithm would be improving the performance and communication complexity of the sort. As discussed before, the distributed sort is over integers. Hence we do not need a comparison based sort and we can replace it with a possibly more efficient integer-specific sort of radix sort.
                     </p>
                     <p>
                         Our sample sort implementation works by performing local sorts on each node, and then doing a multi-way merge by redistributing data across nodes. Within the samplesort implementation, we used GNU parallel extensions to perform multithread local sort on each node, so this is likely to be already highly optimized. Therefore, the only thing left is performing multiway merge and moving elements across nodes, which becomes bottlenecked on the interconnect speed.
@@ -836,7 +845,7 @@
                     <h3>
                     <a id="challenges" class="anchor" href="#challenges" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Challenges</h3>
                     <p>
-                        For the prefix-doubling algorithm, each round of sorting depends on the previous round of sorting. Sorting doesn't have a great amount of locality and has considerable divergence. Also, prefixes are put in buckets as sorting occurs, but the distrbution of data within the buckets is data-dependent and will likely be non-uniform. This leads to load imbalance.
+                        For the prefix-doubling algorithm, each round of sorting depends on the previous round of sorting. Sorting doesn't have a great amount of locality and has considerable divergence. Also, prefixes are put in buckets as sorting occurs, but the distribution of data within the buckets is data-dependent and will likely be non-uniform. This leads to load imbalance.
                         <br><br>
                         For the DC3 algorithm, the recursive structure creates many dependencies. In addition, it uses some comparison-based sorting and merging, which can be expensive for strings.
                         <br><br>
@@ -913,102 +922,6 @@
         </section>
         <aside class="bg-dark">
         </aside>
-        <!--   <section class="no-padding" id="portfolio">
-            <div class="container-fluid">
-                <div class="row no-gutter">
-                    <div class="col-lg-4 col-sm-6">
-                        <a href="#" class="portfolio-box">
-                            <img src="img/portfolio/1.jpg" class="img-responsive" alt="">
-                            <div class="portfolio-box-caption">
-                                <div class="portfolio-box-caption-content">
-                                    <div class="project-category text-faded">
-                                        Category
-                                    </div>
-                                    <div class="project-name">
-                                        Project Name
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a href="#" class="portfolio-box">
-                            <img src="img/portfolio/2.jpg" class="img-responsive" alt="">
-                            <div class="portfolio-box-caption">
-                                <div class="portfolio-box-caption-content">
-                                    <div class="project-category text-faded">
-                                        Category
-                                    </div>
-                                    <div class="project-name">
-                                        Project Name
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a href="#" class="portfolio-box">
-                            <img src="img/portfolio/3.jpg" class="img-responsive" alt="">
-                            <div class="portfolio-box-caption">
-                                <div class="portfolio-box-caption-content">
-                                    <div class="project-category text-faded">
-                                        Category
-                                    </div>
-                                    <div class="project-name">
-                                        Project Name
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a href="#" class="portfolio-box">
-                            <img src="img/portfolio/4.jpg" class="img-responsive" alt="">
-                            <div class="portfolio-box-caption">
-                                <div class="portfolio-box-caption-content">
-                                    <div class="project-category text-faded">
-                                        Category
-                                    </div>
-                                    <div class="project-name">
-                                        Project Name
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a href="#" class="portfolio-box">
-                            <img src="img/portfolio/5.jpg" class="img-responsive" alt="">
-                            <div class="portfolio-box-caption">
-                                <div class="portfolio-box-caption-content">
-                                    <div class="project-category text-faded">
-                                        Category
-                                    </div>
-                                    <div class="project-name">
-                                        Project Name
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                    <div class="col-lg-4 col-sm-6">
-                        <a href="#" class="portfolio-box">
-                            <img src="img/portfolio/6.jpg" class="img-responsive" alt="">
-                            <div class="portfolio-box-caption">
-                                <div class="portfolio-box-caption-content">
-                                    <div class="project-category text-faded">
-                                        Category
-                                    </div>
-                                    <div class="project-name">
-                                        Project Name
-                                    </div>
-                                </div>
-                            </div>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section> -->
         <section id="contact">
             <div class="container">
                 <div class="row">
