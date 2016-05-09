@@ -278,6 +278,9 @@
                         further in the Results section.) We thus chose not to
                         complete the recursive implementation.
                     </p>
+                    <p>
+                        Much of the runtime lies in sorting and necessary communication. We were able to reduce the communication costs somewhat by representing our elements in a compact way, and we sped up sorting by writing fast comparison functions. (This is not entirely trivial because at one point in our algorithm we have four-tuples and five-tuples that need to be sorted with a non-lexicographic comparison function.)
+                    </p>
                 </div>
             </div>
             <div class="container">
@@ -299,8 +302,10 @@
                 <div class="row">
                     <p>
                     Sorting data across several nodes is a crucial part of both pDC3 and PCSS. To accomplish this, we
-                    wrote an implementation of samplesort. 
-                    Samplesort takes as input an array and a comparison function. For <i>p</i> processors, the algorithm works as follows:
+                    wrote an implementation of samplesort in MPI and C++.
+                    Samplesort takes as input an array and a comparison
+                    function. For <i>p</i> processors, the algorithm works as
+                    follows:
                         <ul>
                             <li>Sample <i>p</i>-1 "splitting" points from the input data</li>
                                 <ul>
@@ -310,13 +315,20 @@
                                 </ul>
                             <li>Each processor partitions its local data into <i>p</i> buckets based on the splitters. Each bucket holds data that falls within an interval where the interval's endpoints are adjacent splitters.
                             The buckets have the property that each element in bucket <i>i</i> is "less than" any element bucket <i>j</i> (where "less than" is defined by the input comparison function) if <i>i</i> is less than <i>j</i>.</li>
-                            <li>Give all the elements of bucket <i>i</i> to processor <i>i</i> and sort each bucket.
+                            <li>Give all the elements of bucket <i>i</i> to processor <i>i</i> and sort each bucket.</li>
                         </ul>
-                        The end result is that if the data from each processor is concatenated in order of processor ID, the concatenation is sorted.
+                    The end result is that if the data from each processor is concatenated in order of processor ID, the concatenation is sorted.
                     </p>
                     <p>
-                      This was implemented using C++ and MPI.
-                      TODO optimization efforts
+                        There wasn't much to optimize here. Most of the runtime
+                        comes from communication and two rounds of local
+                        sorting. We could not find any way to avoid this
+                        communication and sorting altogether. One of the rounds
+                        of sorting can be replaced by a multiway merge, which
+                        is asymptotically faster. However, our implementation
+                        of merging turned out to be slower than the original
+                        sort, so we did not use this in our final samplesort
+                        implementation.
                     </p>
                 </div>
             </div>
