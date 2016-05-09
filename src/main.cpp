@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
   // fprintf(stdout, "Done building at rank %d\n", myid);
   MPI_Barrier(MPI_COMM_WORLD);
   if(!myid)
-  fprintf(stdout, "Building time: %f\n", MPI::Wtime() - construction_time);
+    fprintf(stdout, "Building time: %f\n", MPI::Wtime() - construction_time);
 
   /*
   printf("Result: %d: ", myid);

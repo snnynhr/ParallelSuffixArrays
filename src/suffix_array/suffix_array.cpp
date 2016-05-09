@@ -103,6 +103,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
    *  S = <(T[i,i+2], i) : i \in [0,n), i mod 3 \not= 0>
    */
   double elapsed = 0;
+  MPI_Barrier(MPI_COMM_WORLD);
   if (!myid) {
     fprintf(stdout, "Building component 1\n");
     elapsed = MPI::Wtime();
@@ -270,12 +271,9 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     }
 
     int dc3_elem_array_size_int = dc3_elem_array_size;
-    double gt = MPI :: Wtime();
     // send sizes of local arrays in preparation for sending the local arrays
     MPI_Gather(&dc3_elem_array_size_int, 1, MPI_INT, &sizes[0], 1, MPI_INT,
                numprocs - 1, MPI_COMM_WORLD);
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Gather time %f\n", MPI::Wtime() - gt);
 
     if (myid == numprocs - 1) {
       displ[0] = 0;
@@ -287,12 +285,13 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     }
 
     // send local arrays to root
+    MPI_Barrier(MPI_COMM_WORLD);
     double ag = MPI :: Wtime();
 
     MPI_Gatherv(names, dc3_elem_array_size_int, MPI_UNSIGNED, all_names, sizes,
                 displ, MPI_INT, numprocs - 1, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Allgather time %f\n", MPI::Wtime() - ag);
+    if (!myid) printf("Gatherv time %f\n", MPI::Wtime() - ag);
 
     if (myid == numprocs - 1) {
       all_SA = new int[total_size];
@@ -318,13 +317,10 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     int global_idx;
 
     // tell each processor what their index their array starts on globally
-    ag = MPI :: Wtime();
-
     MPI_Scatter(displ, 1, MPI_INT, &global_idx, 1, MPI_INT, numprocs - 1,
                 MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
-    if (!myid) printf("Scatter time %f\n", MPI::Wtime() - ag);
-    if (!myid) fprintf(stdout, "Runtime of sais call: %f\n\n", MPI::Wtime() - recursivet);
+    if (!myid) printf("Runtime of sais call: %f\n\n", MPI::Wtime() - recursivet);
 
     for (int i = 0; i < dc3_elem_array_size_int; i++) {
       P[i].word = global_idx + i + 1;
