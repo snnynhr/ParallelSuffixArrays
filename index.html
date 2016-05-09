@@ -451,9 +451,53 @@
                 </div>
                 <div class="row">
                     <h4> pDC3 </h4>
-                    <p> INSERT GRAPHS HERE </p>
                     <p>
-                        TODO describe important results
+                        We found that almost all of the run time of pDC3 comes
+                        from MPI communication, calls to STL sort (in the
+                        implementation of samplesort), and calling SA-IS.
+                    </p>
+                    <p>
+                        The algorithm is data-transfer-bound and memory-bound.
+                        This is not hard to guess based on the fact that pDC3
+                        consists mostly of writing data and sending it to other
+                        processors with very little arithmetic involved. We
+                        verified this guess by reducing the size of the
+                        datatypes used and observing that the MPI communication
+                        times and sorting times decreased dramatically.
+                    </p>
+                    <p>
+                        It is difficult to optimize MPI communication and local
+                        sorting, but what about the call to SA-IS? At first,
+                        this seems like this is an obvious bottleneck to the
+                        performance of pDC3 since we funnel all the data to a
+                        single node and run a single-threaded algorithm.
+                        Indeed, our original plan was to call pDC3 recursively
+                        instead of calling SA-IS.                     
+                    </p>
+                    <p>
+                        However, our results suggest that we would not gain any
+                        performance by doing so until we reach inputs of over 750MB
+                        in size. Experimentally, our algorithm seems to scale
+                        roughly linearly with the problem size. If the size of
+                        initial input is <i>n</i>, the sum of the problem sizes
+                        of the recursive calls is <i>3n</i>. So if the
+                        additional runtime at each recursive call is <i>cn</i>,
+                        we expect the total runtime to be roughly <i>3n</i>.
+                        But actually, the actual runtime would be even worse
+                        because the recursive call runs on larger datatypes
+                        (since triplets of characters don't fit in a C char),
+                        which is terrible for data transferring and memory
+                        access. The conclusion is that our algorithm probably
+                        would not gain any performance from removing the SA-IS
+                        call until the amount of time taken up by the recursive
+                        call is significantly more than twice the amount of
+                        time taken up by everything else. This doesn't occur
+                        until the input size is on the order of a gigabyte.
+                    </p>
+                    <p>
+                        Considering that our implementation is already slower
+                        than SA-IS by itself, we decided that this was not a worthy
+                        avenue to pursue.
                     </p>
                 </div>
                 <div class="row">
