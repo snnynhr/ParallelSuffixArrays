@@ -108,7 +108,7 @@
                         <div class="service-box">
                             <i class="fa fa-4x fa-rocket wow bounceIn text-primary"></i>
                             <h3>Speed</h3>
-                            <p class="text-muted">Uses the DC3/Skew method to achieve a linear time construction.</p>
+                            <p class="text-muted">Uses the DC3/Skew method to achieve a fast construction.</p>
                         </div>
                     </div>
                     <div class="col-lg-3 col-md-6 text-center">
@@ -423,7 +423,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td> trigrams </td><td> 0 </td> </tr>
+                                <tr><td> trigrams </td><td> < 0.0001 </td> </tr>
                                 <tr><td> wikisamp  </td><td>  1.54</td> </tr>
                                 <tr><td> chr22.dna  </td><td> 1.44</td> </tr>
                                 <tr><td> etext  </td><td> 5.46</td> </tr>
@@ -432,19 +432,80 @@
                                 <tr><td> random 10MB </td><td>1.52</td> </tr>
                                 <tr><td> random 20MB </td><td>3.06</td> </tr>
                                 <tr><td> random 50MB </td><td>7.89</td> </tr>
-                                <tr><td> random 100MB </td><td>16</td> </tr>
+                                <tr><td> random 100MB </td><td>16.00</td> </tr>
                                 <tr><td> random 250MB </td><td>40.69</td> </tr>
                                 <tr><td> random 500MB </td><td>81.73</td> </tr>
                                 <tr><td> random 750MB </td><td> 130.06</td> </tr>
-                                <tr><td> random 1GB </td><td> 205</td> </tr>
+                                <tr><td> random 1GB </td><td> 205.00</td> </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
                 <div class="row">
                     <h3> Data </h3>
-                    <p>
-                    </p>
+                </div>
+                <div class="row">
+                    <div class="col-lg-10 center">
+                        <table class = "table table-bordered">
+                            <caption>pCSS Runtimes</caption>
+                            <thead>
+                                <tr>
+                                    <th>Dataset</th>
+                                    <th>1 Node Runtime (s)</th>
+                                    <th>2 Node Runtime (s)</th>
+                                    <th>4 Node Runtime (s)</th>
+                                    <th>8 Node Runtime (s)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td> trigrams</td><td>0.04256</td><td>0.069251 </td><td>0.067058</td><td>0.06885</td> </tr>
+                                <tr><td>wikisamp</td><td>1.110653</td><td>1.353469</td><td>0.899169</td><td>0.599915</td> </tr>
+                                <tr><td>chr22.dna</td><td>1.099506 </td><td>1.311307</td><td>0.858363</td><td>0.574447</td> </tr>
+                                <tr><td>etext</td><td>2.843792</td><td>4.105355</td><td>2.768228</td><td>1.626782</td> </tr>
+                                <tr><td>random 1MB</td><td>0.164474</td><td>0.188504</td><td>0.168423</td><td>0.128414</td> </tr>
+                                <tr><td>random 5MB</td><td>0.730067</td><td>0.79204</td><td>0.568226</td><td>0.374353</td> </tr>
+                                <tr><td>random 10MB</td><td>1.323709</td><td>1.478898</td><td>1.026515</td><td>0.665979</td> </tr>
+                                <tr><td>random 20MB</td><td>2.064725</td><td>2.944016</td><td>1.951967</td><td>1.219765</td> </tr>
+                                <tr><td>random 50MB</td><td>4.244969</td><td>6.467543</td><td>4.775463</td><td>2.739247</td> </tr>
+                                <tr><td>random 100MB</td><td>7.209381</td><td>11.327291</td><td>8.386905</td><td>5.078551</td></tr>
+                                <tr><td>random 250MB</td><td>19.277768</td><td>28.263648</td><td>19.477082</td><td>11.092358</td> </tr>
+                                <tr><td>random 500MB</td><td>Out of memory</td><td>  54.081576</td><td>40.688515</td><td>   29.501891</td> </tr>
+                                <tr><td>random 750MB</td><td>Out of memory</td><td> Out of memory</td><td>59.407972</td><td> 38.01542</td> </tr>
+                                <tr><td>random 1GB</td><td> Out of memory</td><td>Out of memory</td><td>79.404072</td><td>51.243268</td> </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Graphs </h3>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <img src="./img/pcss_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                    </div>
+                </div>
+                <div class="row">
+
+                    <div class="col-lg-12 text-center">
+                        <img src="./img/pcss_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <img src="./img/pdc3_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <img src="./img/pdc3_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <img src="./img/pdc3_recur.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                    </div>
                 </div>
                 <div class="row">
                     <h3> Performance Analysis </h3>
