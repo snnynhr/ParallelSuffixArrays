@@ -241,28 +241,42 @@
             </div>
             <div class="container">
                 <div class="row">
-                    <h3 class="primary"> <b> pDC3 </b> (Parallel Difference Cover - 3) </h3>
+                    <h3 class="primary"> <b> pDC3 </b> (Parallel Difference Cover modulo 3) </h3>
                     <p>
-                        The DC3 algorithm for constructing suffix arrays is as follows:
+                        The sequential Difference Cover modulo 3 (DC3) algorithm for constructing suffix arrays is as follows:
                         <ul>
                             <li> For each index, get the triplet of three consecutive characters starting at that index. </li>
                             <li> Recursively solve for the suffix array of these triplets for the indices i where i mod 3 is not zero. </li>
-                            <li> Sort the the triplet suffixes for the indices i where i mod 3 is zero, using the result of the recursive call to help determine the ordering </li>
+                            <li> Sort the the triplet suffixes for the indices i where i mod 3 is zero, using the result of the recursive call to help determine the ordering. </li>
                             <li> Merge the two arrays of sorted suffixes. </li>
                         </ul>
                     </p>
                     <p>
                         For large datafiles on the order of several gigabytes, it is not memory efficient to attempt to compute the suffix array on a single machine. We thus
-                        aim to construct the suffix array in parallel across several machines. The bulk of the work consists several rounds of sorting. This can be parallelized to improve efficiency even when the datafiles are not huge. In addition, the algorithm iterates over arrays several times, which is obviously parallelizable.
+                        aim to construct the suffix array in parallel across several machines. The bulk of the work consists several rounds of sorting, which can be parallelized to improve efficiency even when the datafiles are not huge. In addition, the algorithm iterates over arrays several times, which is obviously parallelizable.
                     </p>
                     <h3> Approach </h3>
                     <p>
-                        We wrote our implementation in C++ and used MPI to communicate across nodes on the Latedays cluster.
-                        The sequential DC3 algorithm can be adapted to work in parallel. However, merging is difficult to parallelize, so we choose to sort everything instead of
-                        merging. To parallelize the algorithm, we spawned several processes on each node and gave roughly equal contiguous chunks of the input to each process. Except for sorting, we managed to avoid major communication among nodes. For our sorting algorithm, we implemented samplesort. Sorting unfortunately incurs a lot of communication. This communication cost can be reduced to some extent by choosing a compact way of presenting the elements to be sorted.
+                        We wrote our parallel implementation of the DC3 algorithm in C++ and used MPI to communicate across nodes on the Latedays cluster.
+                        To parallelize the algorithm, we spawned several processes on each node and gave roughly equal contiguous chunks of the input to each process.
+                        Our algorithm is roughly similar to that of the sequential DC3 algorithm. However, merging is difficult to parallelize, so we choose to sort everything instead of
+                        merging.
                     </p>
                     <p>
-                        For constructing the suffix array on small inputs, we use a sequential implementation by Yuta Mori called "sais."
+                        We make a few changes to the sequential DC3 algorithm.
+                        Since merging is difficult to parallelize, we choose to
+                        sort everything instead of merging. In addition,
+                        instead of actually recursively calling our algorithm,
+                        we send all of the data to one node and run a
+                        sequential implementation (called "sais", implemented by
+                        Yuta Mori). This was originally just for testing
+                        purposes; we were planning on expanding our
+                        implementation to recursively call itself. However,
+                        after timing our algorithm, it became clear that the
+                        runtime of our algorithm would be fairly poor even if
+                        it did recursively call itself. (This is discussed
+                        further in the Results section.) We thus chose not to
+                        complete the recursively implementation.
                     </p>
                 </div>
             </div>
@@ -330,7 +344,7 @@
                         </ul>
                         These were the papers were referenced for distributed suffix array construction:
                         <ul>
-                            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction. </a> </li>
+                            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction </a> </li>
                             <li> <a href="http://delivery.acm.org/10.1145/2810000/2807609/a16-flick.pdf?ip=128.237.73.121&id=2807609&acc=ACTIVE%20SERVICE&key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&CFID=747335659&CFTOKEN=47718763&__acm__=1460868043_d6df6e9218c458c4b26bbf6fd43656f0"> Parallel Distributed Memory Construction of Suffix and Longest Common Prefix Arrays </a></li>
                         </ul>
                     </p>
@@ -339,7 +353,7 @@
             <div class="container">
                 <div class="row">
                     <h3> Work Distribution</h3>
-                    <p> Equal work was done by the both members of the group. </p>
+                    <p> Equal work was done by both members of the group. </p>
                 </div>
             </div>
         </section>
