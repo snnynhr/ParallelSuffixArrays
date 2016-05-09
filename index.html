@@ -273,10 +273,10 @@
                         purposes; we were planning on expanding our
                         implementation to recursively call itself. However,
                         after timing our algorithm, it became clear that the
-                        runtime of our algorithm would be fairly poor even if
-                        it did recursively call itself. (This is discussed
+                        runtime would be fairly poor even if
+                        the algorithm did recursively call itself. (This is discussed
                         further in the Results section.) We thus chose not to
-                        complete the recursively implementation.
+                        complete the recursive implementation.
                     </p>
                 </div>
             </div>
@@ -298,16 +298,25 @@
             <div class="container">
                 <div class="row">
                     <p>
-                      In both pDC3 and pCSS, we need to sort data that is
-                    distributed across several nodes. To accomplish this, we
-                    wrote an implementation of samplesort. Samplesort works as follows:
+                    Sorting data across several nodes is a crucial part of both pDC3 and PCSS. To accomplish this, we
+                    wrote an implementation of samplesort. 
+                    Samplesort takes as input an array and a comparison function. For <i>p</i> processors, the algorithm works as follows:
                         <ul>
-                            <li></li>
-                            <li></li>
-                            <li></li>
-                            <li></li>
+                            <li>Sample <i>p</i>-1 "splitting" points from the input data</li>
+                                <ul>
+                                    <li>Each processor samples some points from its local data.</li>
+                                    <li>Gather all these local samples at one processor and pick the splitters based on these local samples. Sort these splitters.</li>
+                                    <li>Broadcast the splitters to all the processors</li>
+                                </ul>
+                            <li>Each processor partitions its local data into <i>p</i> buckets based on the splitters. Each bucket holds data that falls within an interval where the interval's endpoints are adjacent splitters.
+                            The buckets have the property that each element in bucket <i>i</i> is "less than" any element bucket <i>j</i> (where "less than" is defined by the input comparison function) if <i>i</i> is less than <i>j</i>.</li>
+                            <li>Give all the elements of bucket <i>i</i> to processor <i>i</i> and sort each bucket.
                         </ul>
-
+                        The end result is that if the data from each processor is concatenated in order of processor ID, the concatenation is sorted.
+                    </p>
+                    <p>
+                      This was implemented using C++ and MPI.
+                      TODO optimization efforts
                     </p>
                 </div>
             </div>
