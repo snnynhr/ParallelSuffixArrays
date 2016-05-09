@@ -552,8 +552,9 @@
                         would not gain any performance from removing the SA-IS
                         call until the amount of time taken up by the recursive
                         call is significantly more than twice the amount of
-                        time taken up by everything else. This doesn't occur
-                        until the input size is on the order of a gigabyte.
+                        time taken up by everything else. In our experiments,
+                        this doesn't occur until the input size is on the order
+                        of a gigabyte.
                     </p>
                     <p>
                         Considering that our implementation is already slower
@@ -563,6 +564,14 @@
                 </div>
                 <div class="row">
                     <h3> Machine Choice </h3>
+                    <p>
+                        Distributed suffix array construction is inherently going to
+                        involve a lot of communication and memory access since each
+                        node holds a large array and needs information from other
+                        nodes in order to communicate suffixes. As such, either of
+                        our algorithms would be better suited for a cluster with extremely
+                        large memory and data transfer bandwidth.
+                    </p>
                 </div>
             </div>
             <div class="container">
