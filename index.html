@@ -244,45 +244,139 @@
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12 text-center">
-                        <h2 class="section-heading">Suffix Array Construction</h2>
+                        <h2 class="section-heading"><b> pDC3 </b> (Parallel Difference Cover modulo 3)</h2>
                         <hr class="primary">
                     </div>
                 </div>
             </div>
             <div class="container">
                 <div class="row">
-                    <h3> SampleSort </h3>
-                </div>
-                <div class="row">
-                    <h3 class="primary"> <b> pDC3 </b> (Parallel Difference Cover - 3) </h3>
+                    <h3 class="primary"> Algorithm </h3>
                     <p>
-                        The DC3 algorithm for constructing suffix arrays is as follows:
+                        The sequential Difference Cover modulo 3 (DC3) algorithm for constructing suffix arrays is as follows:
                         <ul>
-                            <li> For each index, get the triplet of three consecutive characters starting at that index. </li>
-                            <li> Recursively solve for the suffix array of these triplets for the indices i where i mod 3 is not zero. </li>
-                            <li> Sort the the triplet suffixes for the indices i where i mod 3 is zero, using the result of the recursive call to help determine the ordering </li>
-                            <li> Merge the two arrays of sorted suffixes. </li>
+                            <li> For each index in the string, get the triple of three consecutive characters starting at that index. </li>
+                            <li> Sort these triples. If there are not unique, then, recursively solve for the suffix array of these triples of the corresponding <b>indices</b> <em>i</em> where <em>i mod 3</em> is not zero. This is a subproblem of size <em> 2/3</em> of the original input. </li>
+                            <li> Using the result of the recursive call to construct 3 arrays containing information about the positions of suffixes for indices which are <em> 0,1,2 mod 3</em>. </li>
+                            <li> Combine and sort these three arrays using a carefully chosen comparator.</li>
                         </ul>
                     </p>
                     <p>
                         For large datafiles on the order of several gigabytes, it is not memory efficient to attempt to compute the suffix array on a single machine. We thus
-                        aim to construct the suffix array in parallel across several machines. The bulk of the work consists several rounds of sorting. This can be parallelized to improve efficiency even when the datafiles are not huge. In addition, the algorithm iterates over arrays several times, which is obviously parallelizable.
+                        aim to construct the suffix array in parallel across several machines. The bulk of the work consists several rounds of sorting, which can be parallelized to improve efficiency even when the datafiles are not huge. In addition, the algorithm iterates over arrays several times, which is obviously parallelizable.
                     </p>
-                    <h3> Approach </h3>
+                    <h3> Parallelization </h3>
                     <p>
-                        We wrote our implementation in C++ and used MPI to communicate across nodes on the Latedays cluster.
-                        The sequential DC3 algorithm can be adapted to work in parallel. However, merging is difficult to parallelize, so we choose to sort everything instead of
-                        merging. To parallelize the algorithm, we spawned several processes on each node and gave roughly equal contiguous chunks of the input to each process. Except for sorting, we managed to avoid major communication among nodes. For our sorting algorithm, we implemented samplesort. Sorting unfortunately incurs a lot of communication. This communication cost can be reduced to some extent by choosing a compact way of presenting the elements to be sorted.
+                        We wrote our parallel implementation of the DC3 algorithm in C++ and used MPI to communicate across nodes on the Latedays cluster.
+                        To parallelize the algorithm, we spawned several processes on each node and gave roughly equal contiguous chunks of the input to each process.
+                        Our algorithm is similar to that of the sequential DC3 algorithm. However, merging is difficult to parallelize, so we choose to sort everything instead of
+                        merging.
                     </p>
                     <p>
-                        For constructing the suffix array on small inputs, we use a sequential implementation by Yuta Mori called "sais."
+                        We make a few changes to the sequential DC3 algorithm.
+                        Since merging is difficult to parallelize, we choose to
+                        sort everything instead of merging. In addition,
+                        instead of actually recursively calling our algorithm,
+                        we send all of the data to one node and run a
+                        sequential implementation (called "sa-is", implemented by Yuta Mori). This was originally just for testing
+                        purposes; we were planning on expanding our
+                        implementation to recursively call itself. However,
+                        after timing our algorithm, it became clear that the
+                        runtime would be fairly poor even if the algorithm did recursively call itself. (This is discussed further in the Results section.) We thus chose not to
+                        complete the recursive implementation.
+                    </p>
+                    <p>
+                        Much of the runtime lies in sorting and necessary communication. We were able to reduce the communication costs somewhat by representing our elements in a compact way, and we sped up sorting by writing fast comparison functions. (This is not entirely trivial because at one point in our algorithm we have four-tuples and five-tuples that need to be sorted with a non-lexicographic comparison function.)
                     </p>
                 </div>
             </div>
             <div class="container">
                 <div class="row">
-                    <h3> <b> pCSS </b> (Parallel Cascasding Suffix Sort) </h3>
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading"><b> pCSS </b> (Parallel Cascading Suffix Sort)</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Algorithm and Motivation </h3>
                     <p>
+                        We decided to develop a new algorithm which is inspired from pDC3, prefix doubling, and other suffix sorting algorithms. We wanted to reduce the amount of inter-node MPI communication, as this was taking the bulk of the execution time for pDC3. pDC3 also had a high per-character memory overhead.
+                    </p>
+                    <p>
+                        <ul>
+                            <li> Create and array of 8-length contiguous substrings (samples) for each position in the string.</li>
+                            <li> Sort the array of samples.</li>
+                            <li> Now, all suffixes are sorted by the first 8-letters across the nodes. Find contiguous sequences of equal samples in each node, and sort them using a simple sequential sort. </li>
+                        </ul>
+                    </p>
+                    <h3>Parallelization </h3>
+                    <p>
+                        We first assign contiguous chunks of the string to each processing node. Each node calculates its 8-length samples for each index in the string, for its individual part. We choose 8 simply since 8 characters can fit into a 64-byte long long datatype, and allows the string to have much higher entropy during the per-node sorting phase. These samples are sorted using sample sort. Once this is complete, we have a representation of the suffixes such that they are sorted by the first 8 characters.
+                    </p>
+                    <p>
+                        However, substrings with the equal samples are possibly unsorted. These lie contiguously. Hence, on each node, we search for contiguous sequences of equal samples. For each sequence, we sort the sequences of equal samples using a naive technique which just compares the suffixes at both positions. Hence the worst case runtime is large, however the average case runtime is fairly small. It is possible to improve this using advanced techniques, but we did not pursue these.
+                    </p>
+                    <p>
+                        Once we have sorted the sequences per node, we have to sort the contiguous sequences which lie at the boundary of nodes. This requires adjacent node communication. In the average case, this communication will be very small, or even nonexistent. After this, we have a fully sorted suffix array.
+                    </p>
+                    <h3> Optimizations and Performance</h3>
+                    <p>
+                        We use 64-byte integers to store the samples. This allows for easy sorting, as sorting is simply an integer sort and not a string sort. This makes it possible to replace sample sort which a possibly faster integer specific sort. All in all, this algorithm requires only 1 call to a multi-node sort. After this, the communication is minimal. So this substantially improves upon the communication complexity of pDC3. In addition, the sort in pCSS makes lightweight integer comparisions, where the comparators in the different sorts of pDC3 require much heavier comparators.
+                    </p>
+                    <p>
+                        We only spawn 1 MPI process per node. To achieve inter-node parallelism, we use OpenMP. This allows us to spawn multiple threads per node and parallelize the local sorting across the individual portion of the string on the node. In addition, this allows the samplesort to take advantage of a multithread per-core sort. In samplesort, each processing element needs to locally sort its chunk of elements. As the granularity of processing elements are now nodes, we do this using OpenMP threads to parallelize the sort. GCC has parallel extensions through OpenMP, so we simply have to compile with parallel flags.
+                    </p>
+                    <p>
+                        To find contiguous sequences of equal samples, we simply loop through the array. We utilize the multiple threads per node to split this into parallel searches. At the end, we have to look for contiguous sequences across threads, and then across nodes.
+                    </p>
+                    <p>
+                        However, this method has its drawbacks. In the current implementation, of the string contains a large number of very long repeats, then the local sort on that sequence will be slow, since we are search through the entire suffix. However we argue that it is unlikely for this to happen over most strings, so the cost of this operation will be low. We can also tune the length of samples to improve the performance of low entropy strings. Importantly, this algorithm in its current implementation requires the entire string be accessible to each node. For our implementation, we simply loaded the string into each node. However we can reduce this cost to node communication. Each node needs access to the whole string during the local sorting phase, but this can be probably replaced with communicating with the appropriate node, instead of storing the whole string. The amount of computation during the local sorting is small, so we don't expect using node-to-node communication to substantially increase the cost.
+                    </p>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Sorting</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <p>
+                        Sorting data across several nodes is a crucial part of both pDC3 and pCSS. To accomplish this, we
+                        wrote an implementation of <em>samplesort</em> in MPI and C++. Samplesort takes as input an array and a comparison function. The end result is that if the data from each
+                        processor is concatenated in order of processor ID, the
+                        concatenation is sorted.  For <i>p</i> processors, the
+                        algorithm is as follows:
+                        <ul>
+                            <li>Sample <i>p</i>-1 "splitting" points from the input data</li>
+                            <ul>
+                                <li>Each processor samples some points from its local data.</li>
+                                <li>Gather all these local samples at one processor and pick the splitters based on these local samples. Sort these splitters.</li>
+                                <li>Broadcast the splitters to all the processors</li>
+                            </ul>
+                            <li>Each processor partitions its local data into <i>p</i> buckets based on the splitters. Each bucket holds data that falls within an interval where the interval's endpoints are adjacent splitters.
+                            The buckets have the property that each element in bucket <i>i</i> is "less than" any element bucket <i>j</i> (where "less than" is defined by the input comparison function) if <i>i</i> is less than <i>j</i>.</li>
+                            <li>Give all the elements of bucket <i>i</i> to processor <i>i</i> and sort each bucket.</li>
+                        </ul>
+                    </p>
+                    <p>
+                        There wasn't much to optimize here. Most of the runtime
+                        comes from communication and two rounds of local
+                        sorting. We could not find any way to avoid this
+                        communication and sorting altogether. One of the rounds
+                        of sorting can be replaced by a multiway merge, which
+                        is asymptotically faster. However, our implementation
+                        of merging turned out to be slower than the original
+                        sort, so we did not use this in our final samplesort
+                        implementation.
+                    </p>
+                    <p>
+                        For the granularity of calling samplesort across nodes in pCSS, as opposed to per process, we parallelized the local sorting by using <a href="https://gcc.gnu.org/onlinedocs/libstdc++/manual/parallel_mode.html"> GCC's parallel extensions </a>. This is a parallel extension to GCC's algorithms using the OpenMP framework. This allowed full utilization of each node for local sorting.
                     </p>
                 </div>
             </div>
@@ -343,7 +437,7 @@
                         </ul>
                         These were the papers were referenced for distributed suffix array construction:
                         <ul>
-                            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction. </a> </li>
+                            <li> <a href="http://www.sciencedirect.com/science/article/pii/S0167819107000816"> Scalable parallel suffix array construction </a> </li>
                             <li> <a href="http://delivery.acm.org/10.1145/2810000/2807609/a16-flick.pdf?ip=128.237.73.121&id=2807609&acc=ACTIVE%20SERVICE&key=A792924B58C015C1%2E5A12BE0369099858%2E4D4702B0C3E38B35%2E4D4702B0C3E38B35&CFID=747335659&CFTOKEN=47718763&__acm__=1460868043_d6df6e9218c458c4b26bbf6fd43656f0"> Parallel Distributed Memory Construction of Suffix and Longest Common Prefix Arrays </a></li>
                         </ul>
                     </p>
@@ -352,7 +446,7 @@
             <div class="container">
                 <div class="row">
                     <h3> Work Distribution</h3>
-                    <p> Equal work was done by the both members of the group. </p>
+                    <p> Equal work was done by both members of the group. </p>
                 </div>
             </div>
         </section>
