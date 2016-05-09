@@ -411,8 +411,8 @@
                     </p>
                 </div>
                 <div class="row">
-                    <div class="col-lg-6 center">
-                        <table class = "table table-bordered">
+                    <div class="col-lg-6 text-center">
+                        <table class = "table table-bordered" >
                             <caption>SA-IS Baseline Runtimes</caption>
                             <thead>
                                 <tr>
@@ -421,10 +421,10 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td> trigrams </td><td> 0.0001 </td> </tr>
-                                <tr><td> wikisamp  </td><td>  1.54</td> </tr>
-                                <tr><td> chr22.dna  </td><td> 1.44</td> </tr>
-                                <tr><td> etext  </td><td> 5.46</td> </tr>
+                                <tr><td> trigrams (42KB) </td><td> 0.0001 </td> </tr>
+                                <tr><td> wikisamp  (8.5MB)</td><td>  1.54</td> </tr>
+                                <tr><td> chr22.dna (8.1MB)</td><td> 1.44</td> </tr>
+                                <tr><td> etext (28MB)</td><td> 5.46</td> </tr>
                                 <tr><td> random 1MB </td><td> 0.16</td> </tr>
                                 <tr><td> random 5MB </td><td> 0.83</td> </tr>
                                 <tr><td> random 10MB </td><td>1.52</td> </tr>
@@ -439,9 +439,16 @@
                         </table>
                     </div>
                 </div>
+            </div>
+            <div class="container">
                 <div class="row">
-                    <h3> Data </h3>
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">Data</h2>
+                        <hr class="primary">
+                    </div>
                 </div>
+            </div>
+            <div class="container">
                 <div class="row">
                     <div class="col-lg-10 center">
                         <table class = "table table-bordered">
@@ -477,55 +484,47 @@
             </div>
             <div class="container">
                 <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">pDC3 Performance Analysis</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
                     <h3> Graphs </h3>
                 </div>
                 <div class="row">
                     <div class="col-lg-12 text-center">
-                        <img src="./img/pcss_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                        <figure class="figure">
+                            <img src="./img/pdc3_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                            <figcaption class="figure-caption">The above graph shows the speedup of pDC3 running on four nodes with twelve processes per node
+                            compared to SA-IS. Notice that pDC3 is actually slower than SA-IS even though SA-IS is completely sequential. The relative performance of pDC3 improves somewhat as the problem sizes become large.</figcaption>
+                        </figure>
                     </div>
                 </div>
-                <div class="row">
-
+                <div class="row" style="padding: 50px 0px 0px 0px;">
                     <div class="col-lg-12 text-center">
-                        <img src="./img/pcss_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                        <figure class="figure">
+                            <img src="./img/pdc3_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                            <figcaption class="figure-caption">Here we break down the runtime of pDC3. The blue bars represent the runtime taken up by MPI data transfers. The red bars represent the runtime taken up by local calls to STL sort in the implementation of samplesort. The grey bars make up everything else, including the call SA-IS. If the call to SA-IS were excluded from the grey bars, then we would see that the MPI and sort calls take up a vast majority of the execution time.</figcaption>
+                        </figure>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row" style="padding: 50px 0px 20px 0px;">
                     <div class="col-lg-12 text-center">
-                        <img src="./img/pdc3_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                        <figure class="figure">
+                            <img src="./img/pdc3_recur.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                            <figcaption class="figure-caption">  In the above graph, the blue bar represents the proportion of
+                            the run time taken up by the call to sequential SA-IS. The timing includes the time to send all the data to one node. Note that the recursive call actually does not take up a huge amount
+                            of the run time until input sizes are very large.</figcaption>
+                        </figure>
                     </div>
                 </div>
-                The above graph shows the speedup of pDC3 running on four nodes with twelve processes per node
-                compared to SA-IS. Notice that pDC3 is actually slower than
-                SA-IS even though SA-IS is completely sequential. The relative
-                performance of pDC3 improves somewhat as the problem sizes become large.
                 <div class="row">
-                    <div class="col-lg-12 text-center">
-                        <img src="./img/pdc3_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
-                    </div>
-                </div>
-                Here we break down the runtime of pDC3. The blue bars represent
-                the runtime taken up by MPI data transfers. The red bars
-                represent the runtime taken up by local calls to STL sort in
-                the implementation of samplesort. The grey bars make up
-                everything else, including the call SA-IS. If the call to SA-IS
-                were excluded from the grey bars, then we would see that the
-                MPI and sort calls take up a vast majority of the execution time.
-                <div class="row">
-                    <div class="col-lg-12 text-center">
-                        <img src="./img/pdc3_recur.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
-                    </div>
-                </div>
-                In the above graph, the blue bar represents the proportion of
-                the run time taken up by the call to sequential SA-IS. The
-                timing includes the time to send all the data to one node. Note
-                that the recursive call actually does not take up a huge amount
-                of the run time until input sizes are very large.
-                <div class="row">
-                    <h3> Performance Analysis </h3>
+                    <h3> Analysis </h3>
                 </div>
                 <div class="row">
-                    <h4> pDC3 </h4>
                     <p>
                         We found that almost all of the run time of pDC3 comes
                         from MPI communication, calls to STL sort in the
@@ -577,16 +576,58 @@
                         avenue to pursue further.
                     </p>
                 </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <h2 class="section-heading">pCSS Performance Analysis</h2>
+                        <hr class="primary">
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Graphs </h3>
+                </div>
+                <div class="row">
+                    <div class="col-lg-12 text-center">
+                        <figure class="figure">
+                            <img src="./img/pcss_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                            <figcaption class="figure-caption"> This graph shows the runtime of pCSS compared to the SA-IS baseline. pCSS is run on the specified number of nodes with multithreading on each node. For the small inputs (< 1MB), we see that pCSS performs worse than SA-IS. This is due to overhead of communication between nodes, as well as additional computation. A simple fix is run to SA-IS for small sizes. We achieve speedups for all node configurations on all other inputs. The algorithm scales well as the performance greatly increases from 2 to 4 nodes and from 4 to 8 nodes. We see a dip in performance from 1 node to 2 nodes. This is because on 1 node, no MPI communication is required, and MPI communication is expensive. </figcaption>
+                        </figure>
+                    </div>
+                </div>
+                <div class="row" style="padding: 50px 0px 20px 0px;">
+                    <div class="col-lg-12 text-center">
+                        <figure class="figure">
+                            <img src="./img/pcss_mpi.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
+                            <figcaption class="figure-caption"> This graph shows the percentage runtime which is MPI communication over the different node configurations (2, 4, 8) and inputs. It ranges from roughly 25% on 2 nodes to 40% on 8 nodes, and consistently increases from 2 to 8 nodes. Although the percentage of communication is still very high, the absolute time is a lot less, since we have also lowered computation time. </figcaption>
+                        </figure>
+                    </div>
+                </div>
+            </div>
+            <div class="container">
+                <div class="row">
+                    <h3> Analysis </h3>
+                    <p>
+                        Due to the reduced communication costs and less expensive sort, pCSS performed significantly better than pDC3. It was able to achieve 3-4x speedup over SA-IS on 8 nodes for the large datasets. Even for real world inputs, our algorithm performed well, and hence our assumption about large number of equal and long strings held. We also observe increasing speedup and we increase the numbre of nodes, so the algorithm seems to scale well.
+                    </p>
+                    <p>
+                        As discussed in the last graph, a major component of the algorithm is still communication costs, accounting for 40% of the runtime. This is a similar percentage to pDC3. It is large percentage since we also improved the computation complexity significantly. Since our test interface, the Latedays cluster, uses ethernet connections between nodes, and not a high-speed interconnection network, we suspect that we can limit the impact of communication by using a better linked distributed system.
+                    </p>
+                    <p>
+                        We can split the algorithm into 4 main components. The first component is constructing the sample array. The second component is performing the distributed sort over all nodes over the sample array. The third component is perform local per-node sample-correction sorts. The last component is extracting the suffix array indices from the sorted sample array. By analyzing the runtime of each component, we found that that pCSS spends 97% of its runtime performing the samplesort. So the primary method of improving this algorithm would be improving the performance and communication complexity of the sort. As dicussed before, the distributed sort is over integers. Hence we do not need a comparison based sort and we can replace it with a possibly more efficient integer-specific sort of radix sort.
+                    </p>
+                    <p>
+                        Our sample sort implementation works by performing local sorts on each node, and then doing a multi-way merge by redistributing data across nodes. Within the samplesort implementation, we used GNU parallel extensions to perform multithread local sort on each node, so this is likely to be already highly optimized. Therefore, the only thing left is performing multiway merge and moving elements across nodes, which becomes bottlenecked on the interconnect speed.
+                    </p>
+                </div>
+            </div>
+            <div class="container">
                 <div class="row">
                     <h3> Machine Choice </h3>
                     <p>
-                        Distributed suffix array construction is inherently going to
-                        involve a lot of communication and memory access since each
-                        node holds a large array and needs information from other
-                        nodes in order to compute suffixes. As such, either of
-                        our algorithms (but especially pDC3)  would be better
-                        suited for a cluster with extremely large memory and
-                        data transfer bandwidth.
+                        Our problem focused on constructing suffix arrays on large datasets. Hence using GPUs is not viable since they have very limited memory. In addition, suffix array construction is not data parallel. As discussed, the algorithms we discussed would work well on CPU's, as shown by our 1 node results. But the goal was to build large suffix arrays which cannot fit on a single CPU, so using a distributed cluster was the best option.
                     </p>
                 </div>
                 <div class="row">
