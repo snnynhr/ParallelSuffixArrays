@@ -263,7 +263,7 @@
                             <li> For each index in the string, get the triple of three consecutive characters starting at that index. </li>
                             <li> Sort these triples. If there are not unique, then, recursively solve for the suffix array of these triples of the corresponding indices <em>i</em> where <em>i mod 3</em> is not zero. This is a subproblem of size <em> 2/3</em> of the original input. </li>
                             <li> Using the result of the recursive call to construct 3 arrays containing information about the positions of suffixes for indices which are <em> 0,1,2 mod 3</em>. </li>
-                            <li> Combine and sort these three arrays using a carefully chosen comparator.</li>
+                            <li> Merge these three arrays using a carefully chosen comparator.</li>
                         </ul>
                     </p>
                     <p>
@@ -274,8 +274,6 @@
                     <p>
                         We wrote our parallel implementation of the DC3 algorithm in C++ and used MPI to communicate across nodes on the Latedays cluster.
                         To parallelize the algorithm, we spawned several processes on each node and gave roughly equal contiguous chunks of the input to each process.
-                        Our algorithm is similar to that of the sequential DC3 algorithm. However, merging is difficult to parallelize, so we choose to sort everything instead of
-                        merging.
                     </p>
                     <p>
                         We make a few changes to the sequential DC3 algorithm.
