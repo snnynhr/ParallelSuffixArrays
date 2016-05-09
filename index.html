@@ -237,7 +237,7 @@
                         The other algorithm, prefix doubling, works by sorting fixed sized suffixes in rounds, doubling in size each round. It first sorts by 1 character, then 2 characters, then 4 characters, and so on. It often uses radix sorting.
                     </p>
                     <p>
-                        The most expensive part of the algorithm is the sort. The algorithm requires some type of sort to arrange the suffixes. Suffixes can be linear in the size of the array, so the type of sort depends on the algorithm, i.e, the number of characters per suffix the algorithm uses. An algorithm which uses too much of the suffix may end of using too much memory, so there needs to be between balance between memory usage and speed. Once we begin to parallelize this, the algorithms will require significant amounts of communication between nodes, so this needs to be taken into account.
+                        The most expensive part of the algorithm is the sort. The algorithm requires some type of sort to arrange the suffixes. Suffixes can be linear in the size of the array, so the type of sort depends on the algorithm, i.e, the number of characters per suffix the algorithm uses. An algorithm which uses too much of the suffix may end up using too much memory, so there needs to be balance between memory usage and speed. Once we begin to parallelize this, the algorithms will require significant amounts of communication between nodes, so this needs to be taken into account.
                     </p>
                     <p>
                         These are the most common <a href="#applications" class="page-scroll"> applications. </a>
@@ -261,7 +261,7 @@
                         The sequential Difference Cover modulo 3 (DC3) algorithm for constructing suffix arrays is as follows:
                         <ul>
                             <li> For each index in the string, get the triple of three consecutive characters starting at that index. </li>
-                            <li> Sort these triples. If there are not unique, then, recursively solve for the suffix array of these triples of the corresponding indices <em>i</em> where <em>i mod 3</em> is not zero. This is a subproblem of size <em> 2/3</em> of the original input. </li>
+                            <li> Sort these triples. If these are not unique, then recursively solve for the suffix array of these triples of the corresponding indices <em>i</em> where <em>i mod 3</em> is not zero. This is a subproblem of size <em> 2/3</em> of the original input. </li>
                             <li> Using the result of the recursive call to construct 3 arrays containing information about the positions of suffixes for indices which are <em> 0,1,2 mod 3</em>. </li>
                             <li> Merge these three arrays using a carefully chosen comparator.</li>
                         </ul>
@@ -319,7 +319,7 @@
                         We first assign contiguous chunks of the string to each processing node. Each node calculates its 8-length samples for each index in the string, for its individual part. We choose 8 simply since 8 characters can fit into a 64-byte long long datatype, and allows the string to have much higher entropy during the per-node sorting phase. These samples are sorted using sample sort. Once this is complete, we have a representation of the suffixes such that they are sorted by the first 8 characters.
                     </p>
                     <p>
-                        However, substrings with the equal samples are possibly unsorted. These lie contiguously. Hence, on each node, we search for contiguous sequences of equal samples. For each sequence, we sort the sequences of equal samples using a naive technique which just compares the suffixes at both positions. Hence the worst case runtime is large, however the average case runtime is fairly small. It is possible to improve this using advanced techniques, but we did not pursue these.
+                        However, substrings with equal samples are possibly unsorted. These lie contiguously. Hence, on each node, we search for contiguous sequences of equal samples. For each sequence, we sort the sequences of equal samples using a naive technique which just compares the suffixes at both positions. Hence the worst case runtime is large. The average case runtime, however is fairly small. It is possible to improve this using advanced techniques, but we did not pursue these.
                     </p>
                     <p>
                         Once we have sorted the sequences per node, we have to sort the contiguous sequences which lie at the boundary of nodes. This requires adjacent node communication. In the average case, this communication will be very small, or even nonexistent. After this, we have a fully sorted suffix array.
@@ -335,7 +335,7 @@
                         To find contiguous sequences of equal samples, we simply loop through the array. We utilize the multiple threads per node to split this into parallel searches. At the end, we have to look for contiguous sequences across threads, and then across nodes.
                     </p>
                     <p>
-                        However, this method has its drawbacks. In the current implementation, of the string contains a large number of very long repeats, then the local sort on that sequence will be slow, since we are search through the entire suffix. However we argue that it is unlikely for this to happen over most strings, so the cost of this operation will be low. We can also tune the length of samples to improve the performance of low entropy strings. Importantly, this algorithm in its current implementation requires the entire string be accessible to each node. For our implementation, we simply loaded the string into each node. However we can reduce this cost to node communication. Each node needs access to the whole string during the local sorting phase, but this can be probably replaced with communicating with the appropriate node, instead of storing the whole string. The amount of computation during the local sorting is small, so we don't expect using node-to-node communication to substantially increase the cost.
+                        However, this method has its drawbacks. In the current implementation, if the string contains a large number of very long repeats, then the local sort on that sequence will be slow, since we are search through the entire suffix. However we argue that it is unlikely for this to happen over most strings, so the cost of this operation will be low. We can also tune the length of samples to improve the performance of low entropy strings. Importantly, this algorithm in its current implementation requires the entire string be accessible to each node. For our implementation, we simply loaded the string into each node. However we can reduce this cost with node communication. Each node needs access to the whole string during the local sorting phase, but this can be probably replaced with communicating with the appropriate node, instead of storing the whole string. The amount of computation during the local sorting is small, so we don't expect using node-to-node communication to substantially increase the cost.
                     </p>
                 </div>
             </div>
@@ -356,11 +356,11 @@
                         concatenation is sorted.  For <em>p</em> processors, the
                         algorithm is as follows:
                         <ul>
-                            <li>Sample <em>p</em>-1 "splitting" points from the input data</li>
+                            <li>Sample <em>p</em>-1 "splitting" points from the input data.</li>
                             <ul>
                                 <li>Each processor samples some points from its local data.</li>
                                 <li>Gather all these local samples at one processor and pick the splitters based on these local samples. Sort these splitters.</li>
-                                <li>Broadcast the splitters to all the processors</li>
+                                <li>Broadcast the splitters to all the processors.</li>
                             </ul>
                             <li>Each processor partitions its local data into <em>p</em> buckets based on the splitters. Each bucket holds data that falls within an interval where the interval's endpoints are adjacent splitters.
                             The buckets have the property that each element in bucket <em>i</em> is "less than" any element bucket <em>j</em> (where "less than" is defined by the input comparison function) if <em>i</em> is less than <em>j</em>.</li>
@@ -495,7 +495,7 @@
                         <img src="./img/pdc3_speedup.jpg" class="img-responsive" style="margin: 10px 10px 10px 10px;">
                     </div>
                 </div>
-                The above graph shows the speedup of pDC3 running on four nodes
+                The above graph shows the speedup of pDC3 running on four nodes with twelve processes per node
                 compared to SA-IS. Notice that pDC3 is actually slower than
                 SA-IS even though SA-IS is completely sequential. The relative
                 performance of pDC3 improves somewhat as the problem sizes become large.
@@ -558,7 +558,7 @@
                         of the recursive calls is <em>3n</em>. So if the
                         additional runtime at each recursive call is <em>cn</em>,
                         we expect the total runtime to be roughly <em>3cn</em>.
-                        But actually, the actual runtime would be even worse
+                        But in reality, the actual runtime would be even worse
                         because the recursive call runs on larger datatypes
                         (since triplets of characters don't fit in a C char),
                         which is terrible for data transferring and memory
@@ -583,8 +583,9 @@
                         involve a lot of communication and memory access since each
                         node holds a large array and needs information from other
                         nodes in order to compute suffixes. As such, either of
-                        our algorithms would be better suited for a cluster with extremely
-                        large memory and data transfer bandwidth.
+                        our algorithms (but especially pDC3)  would be better
+                        suited for a cluster with extremely large memory and
+                        data transfer bandwidth.
                     </p>
                 </div>
             </div>
@@ -768,11 +769,11 @@
                 <div class="row">
                     <h3>
                     <a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h3>
-                    <p>A suffix array is a data structure that stores the suffixes of a word in sorted order. It stores an array which at entry i stores the starting index of the lexicographically ith smallest suffix. The suffix array is related to the suffix tree data structure, but uses a smaller memory footprint (5 times less) and has the benefit of cache locality.
+                    <p>A suffix array is a data structure that stores the suffixes of a word in sorted order. It is an array which at entry i stores the starting index of the lexicographically ith smallest suffix. The suffix array is related to the suffix tree data structure, but has a smaller memory footprint (5 times less) and has the benefit of cache locality.
                         <br><br>
-                        Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
+                        Suffix arrays are used in numerous compression algorithms and speed up many string operations, like substring search. Hence increased performance from either multithreaded or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
                         <br><br>
-                        There are two common algorithms for suffix array construction. The DC3 algorithm solves a subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
+                        There are two common algorithms for suffix array construction. The DC3 algorithm solves a subproblem of size 2/3, using the solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and calls radix sort.
                         <br><br>
                         The Prefix doubling algorithm works by sorting suffixes by first 1 character, then by first 2 characters, then by first 4 characters, then by first 8 characters, and so on. It often uses radix sorting.
                         <br><br>
