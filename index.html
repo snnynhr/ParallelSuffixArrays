@@ -304,8 +304,10 @@
                     Sorting data across several nodes is a crucial part of both pDC3 and PCSS. To accomplish this, we
                     wrote an implementation of samplesort in MPI and C++.
                     Samplesort takes as input an array and a comparison
-                    function. For <i>p</i> processors, the algorithm works as
-                    follows:
+                    function.  The end result is that if the data from each
+                    processor is concatenated in order of processor ID, the
+                    concatenation is sorted.  For <i>p</i> processors, the
+                    algorithm is as follows:
                         <ul>
                             <li>Sample <i>p</i>-1 "splitting" points from the input data</li>
                                 <ul>
@@ -317,7 +319,6 @@
                             The buckets have the property that each element in bucket <i>i</i> is "less than" any element bucket <i>j</i> (where "less than" is defined by the input comparison function) if <i>i</i> is less than <i>j</i>.</li>
                             <li>Give all the elements of bucket <i>i</i> to processor <i>i</i> and sort each bucket.</li>
                         </ul>
-                    The end result is that if the data from each processor is concatenated in order of processor ID, the concatenation is sorted.
                     </p>
                     <p>
                         There wasn't much to optimize here. Most of the runtime
