@@ -247,6 +247,12 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     ssort::samplesort(P, P + dc3_elem_array_size, compare_P_elem, mpi_dc3_elem,
                       numprocs, myid);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    double recursivet = 0;
+    if (!myid)
+      recursivet = MPI::Wtime();
+
+
     // Use SAIS for recursive case. TODO expand to distributed version
     //
 
@@ -300,6 +306,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     int* local_SA = new int[dc3_elem_array_size];
 
     // send result of recursive call back to nodes
+    MPI_Barrier(MPI_COMM_WORLD);
     ag = MPI :: Wtime();
 
     MPI_Scatterv(all_SA, sizes, displ, MPI_INT, local_SA,
@@ -317,6 +324,7 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
                 MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD);
     if (!myid) printf("Scatter time %f\n", MPI::Wtime() - ag);
+    if (!myid) fprintf(stdout, "Runtime of sais call: %f\n\n", MPI::Wtime() - recursivet);
 
     for (int i = 0; i < dc3_elem_array_size_int; i++) {
       P[i].word = global_idx + i + 1;
@@ -327,7 +335,9 @@ int32_t SuffixArray::build(const char* data, uint32_t size, uint32_t file_size,
     delete[] displ;
     delete[] all_SA;
     delete[] local_SA;
+
   }
+
 
   // Sort P by second element. This aids in next component's construction.
   ssort::samplesort(P, P + dc3_elem_array_size, compare_sortedP_elem,
