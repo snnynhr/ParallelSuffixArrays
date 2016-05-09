@@ -223,11 +223,21 @@
             </div>
             <div class="container">
                 <div class="row">
-                    <h3> Background</h3>
+                    <h3> What is a Suffix Array?</h3>
                     <p>
-                        The goal is to take as input a text file or a character array and to output an array SA where SA[i] is the starting index of the i-th suffix sorted in
-                        descending lexicographical order.
-                        TODO.
+                        A suffix array is a data structure which stores the suffixes of a string in sorted order. Let <em>S</em> be a length <em>n</em> string. It stores an array which at entry <em>i</em> stores the starting index of the lexicographically <em>i</em>th smallest suffix (the suffix at index <em>i</em> is <em>S[i ... n - 1]</em>). The suffix array is related to the suffix tree data structure, but uses a smaller memory footprint (approximately 5 times less) and has the benefit of cache locality.
+                    </p>
+                    <p>
+                        Suffix arrays are used in numerous compression algorithms, and speed up many string operations, like substring search. Hence increased performance from either multithreaded, distributed, or CUDA accelerated programs greatly impacts the ability to work and operate efficiently on large data sets.
+                    </p>
+                    <p>
+                        There are two common algorithms for suffix array construction. The DC3 algorithm contracts the problem and solves a subproblem of size 2/3, and uses to solution to create the suffix array in linear time. It works by carefully selecting a subset of suffixes and sorts the suffixes and additional data. We implemented a distributed version of this algorithm.
+                    </p>
+                    <p>
+                        The other algorithm, prefix doubling, works by sorting fixed sized suffixes in rounds, doubling in size each round. It first sorts by 1 character, then 2 characters, then 4 characters, and so on. It often uses radix sorting.
+                    </p>
+                    <p>
+                        These are the most common <a href="#applications" class="page-scroll"> applications. </a>
                     </p>
                 </div>
             </div>
@@ -240,6 +250,9 @@
                 </div>
             </div>
             <div class="container">
+                <div class="row">
+                    <h3> SampleSort </h3>
+                </div>
                 <div class="row">
                     <h3 class="primary"> <b> pDC3 </b> (Parallel Difference Cover - 3) </h3>
                     <p>
