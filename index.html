@@ -423,7 +423,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr><td> trigrams </td><td> < 0.0001 </td> </tr>
+                                <tr><td> trigrams </td><td> 0.0001 </td> </tr>
                                 <tr><td> wikisamp  </td><td>  1.54</td> </tr>
                                 <tr><td> chr22.dna  </td><td> 1.44</td> </tr>
                                 <tr><td> etext  </td><td> 5.46</td> </tr>
@@ -514,8 +514,8 @@
                     <h4> pDC3 </h4>
                     <p>
                         We found that almost all of the run time of pDC3 comes
-                        from MPI communication, calls to STL sort (in the
-                        implementation of samplesort), and calling SA-IS.
+                        from MPI communication, calls to STL sort in the
+                        implementation of samplesort, and calling SA-IS.
                     </p>
                     <p>
                         The algorithm is data-transfer-bound and memory-bound.
@@ -533,7 +533,7 @@
                         performance of pDC3 since we funnel all the data to a
                         single node and run a single-threaded algorithm.
                         Indeed, our original plan was to call pDC3 recursively
-                        instead of calling SA-IS.                     
+                        instead of calling SA-IS.
                     </p>
                     <p>
                         However, our results suggest that we would not gain any
@@ -543,7 +543,7 @@
                         initial input is <i>n</i>, the sum of the problem sizes
                         of the recursive calls is <i>3n</i>. So if the
                         additional runtime at each recursive call is <i>cn</i>,
-                        we expect the total runtime to be roughly <i>3n</i>.
+                        we expect the total runtime to be roughly <i>3cn</i>.
                         But actually, the actual runtime would be even worse
                         because the recursive call runs on larger datatypes
                         (since triplets of characters don't fit in a C char),
