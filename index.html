@@ -237,6 +237,9 @@
                         The other algorithm, prefix doubling, works by sorting fixed sized suffixes in rounds, doubling in size each round. It first sorts by 1 character, then 2 characters, then 4 characters, and so on. It often uses radix sorting.
                     </p>
                     <p>
+                        The most expensive part of the algorithm is the sort. The algorithm requires some type of sort to arrange the suffixes. Suffixes can be linear in the size of the array, so the type of sort depends on the algorithm, i.e, the number of characters per suffix the algorithm uses. An algorithm which uses too much of the suffix may end of using too much memory, so there needs to be between balance between memory usage and speed. Once we begin to parallelize this, the algorithms will require significant amounts of communication between nodes, so this needs to be taken into account.
+                    </p>
+                    <p>
                         These are the most common <a href="#applications" class="page-scroll"> applications. </a>
                     </p>
                 </div>
