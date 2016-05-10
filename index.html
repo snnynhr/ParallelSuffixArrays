@@ -552,16 +552,16 @@
                     <p>
                         However, our results suggest that we would not gain any
                         performance by doing so until we reach inputs of over 750MB
-                        in size. Experimentally, our algorithm seems to scale
+                        in size. Experimentally, the implementation seems to scale
                         roughly linearly with the problem size. If the size of
                         initial input is <em>n</em>, the sum of the problem sizes
                         of the recursive calls is <em>3n</em>. So if the
-                        additional runtime at each recursive call is <em>cn</em>,
+                        additional runtime at each recursive call is about <em>cn</em>,
                         we expect the total runtime to be roughly <em>3cn</em>.
                         But in reality, the actual runtime would be even worse
                         because the recursive call runs on larger datatypes
                         (since triplets of characters don't fit in a C char),
-                        which is terrible for data transferring and memory
+                        which is terrible for data transferral and memory
                         access. The conclusion is that our algorithm probably
                         would not gain any performance from removing the SA-IS
                         call until the amount of time taken up by the recursive
