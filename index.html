@@ -556,8 +556,9 @@
                         roughly linearly with the problem size. If the size of
                         initial input is <em>n</em>, the sum of the problem sizes
                         of the recursive calls is <em>3n</em>. So if the
-                        additional runtime at each recursive call is about <em>cn</em>,
-                        we expect the total runtime to be roughly <em>3cn</em>.
+                        additional runtime at each recursive call is about
+                        <em>cn</em> where <em>c</em> is some constant, we
+                        expect the total runtime to be roughly <em>3cn</em>.
                         But in reality, the actual runtime would be even worse
                         because the recursive call runs on larger datatypes
                         (since triplets of characters don't fit in a C char),
